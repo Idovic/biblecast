@@ -597,7 +597,7 @@ footer::before { content: ""; position: absolute; left: 50%; top: -160px; width:
       <div class="apk reveal">
         <div style="display:grid;gap:6px">
           <h3>BibleCast TV</h3>
-          <p class="meta">Écran · Android TV 5 ou plus · v2.0</p>
+          <p class="meta">Écran · Android TV 5 ou plus · v2.0 · 5 Mo</p>
           <p class="meta">Adresse courte, à taper sur la TV<br><span class="short">idovic.github.io/biblecast/tv</span></p>
         </div>
         <span class="logo" style="width:92px;height:92px;border-radius:20px" aria-hidden="true"><svg style="width:44px;height:44px;color:var(--gold)"><use href="#i-tv"/></svg></span>
@@ -736,7 +736,7 @@ footer::before { content: ""; position: absolute; left: 50%; top: -160px; width:
 
 <script>
 /* Passer à true quand les APK sont publiés dans les Releases GitHub */
-var APK_READY = { tablette: true, tv: false };
+var APK_READY = { tablette: true, tv: true };
 (function () {
   document.querySelectorAll('.apk-link').forEach(function (a) {
     if (APK_READY[a.dataset.apk]) return;
