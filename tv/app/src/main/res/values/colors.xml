@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fonds -->
+    <color name="bg_dark">#0d1b2a</color>
+
+    <!-- Textes -->
+    <color name="white">#FFFFFF</color>
+    <color name="text_dim">#99AABB</color>
+    <color name="text_hint">#55778899</color>
+
+    <!-- Accent doré — cohérent avec le design BibleCast -->
+    <color name="gold_accent">#C9A84C</color>
+</resources>

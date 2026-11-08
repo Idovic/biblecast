@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Autorise explicitement les connexions HTTP en clair vers les IP du réseau local.
+    Nécessaire sur Android TV quand la box WiFi n'a pas d'accès internet :
+    Android marque le réseau comme "non validé" et peut bloquer le trafic HTTP
+    malgré android:usesCleartextTraffic="true" dans le manifest.
+-->
+<network-security-config>
+    <!-- Autoriser HTTP vers toutes les plages IP privées (réseau local) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">192.168.1.0</domain>
+        <domain includeSubdomains="true">192.168.2.0</domain>
+        <domain includeSubdomains="true">10.0.0.0</domain>
+        <domain includeSubdomains="true">10.0.1.0</domain>
+        <domain includeSubdomains="true">172.16.0.0</domain>
+    </domain-config>
+    <!-- Autoriser HTTP en clair partout (fallback global) -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>

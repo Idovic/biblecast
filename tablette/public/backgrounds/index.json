@@ -1,0 +1,8 @@
+[
+  { "id": "coucher-soleil", "label": "Coucher de soleil", "url": "/backgrounds/coucher-soleil.jpg" },
+  { "id": "trois-croix",    "label": "Trois croix",       "url": "/backgrounds/trois-croix.jpg" },
+  { "id": "croix-brume",    "label": "Croix dans la brume","url": "/backgrounds/croix-brume.jpg" },
+  { "id": "bible-ouverte",  "label": "Bible ouverte",     "url": "/backgrounds/bible-ouverte.jpg" },
+  { "id": "rayons-dores",   "label": "Rayons dorés",      "url": "/backgrounds/rayons-dores.jpg" },
+  { "id": "ciel-bleu",      "label": "Ciel bleu",         "url": "/backgrounds/ciel-bleu.jpg" }
+]

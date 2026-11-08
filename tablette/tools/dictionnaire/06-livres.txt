@@ -1,0 +1,197 @@
+@Genèse (livre)|b|Genèse 1:1; Genèse 12:1-3; Genèse 50:20
+Premier livre de la Bible, dont le nom signifie « origine ». Il raconte la création, la chute, le déluge, la tour de Babel, puis l'histoire d'Abraham, d'Isaac, de Jacob et de Joseph. Traditionnellement attribué à Moïse.
+
+@Exode (livre)|b|Exode 3:14; Exode 12:13; Exode 20:1-17
+Deuxième livre de la Bible, dont le nom signifie « sortie ». Il raconte l'esclavage d'Israël en Égypte, l'appel de Moïse, les plaies, la Pâque, la traversée de la mer Rouge, le don de la loi au Sinaï et la construction du tabernacle.
+
+@Lévitique (livre)|b|Lévitique 11:44; Lévitique 16:30; Lévitique 19:18
+Troisième livre de la Bible, consacré au service des Lévites et des sacrificateurs : les sacrifices, la pureté, le jour des Expiations et les fêtes. Son message central : « Soyez saints, car je suis saint. » On y lit aussi : « Tu aimeras ton prochain comme toi-même. »
+
+@Nombres (livre)|b|Nombres 6:24-26; Nombres 14:18; Nombres 21:8-9
+Quatrième livre de la Bible, qui tire son nom des recensements du peuple. Il raconte les quarante ans de marche au désert, les murmures et la désobéissance d'Israël, mais aussi la fidélité de Dieu. Il contient la bénédiction sacerdotale.
+
+@Deutéronome (livre)|b|Deutéronome 6:4-9; Deutéronome 30:19-20; Deutéronome 34:5
+Cinquième livre de la Bible, dont le nom signifie « seconde loi ». Ce sont les derniers discours de Moïse avant l'entrée en Canaan, qui rappellent la loi et appellent à aimer Dieu de tout son cœur. « Choisis la vie. »
+
+@Josué (livre)|b|Josué 1:8-9; Josué 6:20; Josué 24:15
+Livre qui raconte l'entrée d'Israël dans le pays promis sous la conduite de Josué : la traversée du Jourdain, la chute de Jéricho, la conquête et le partage du pays entre les tribus. « Fortifie-toi et prends courage. »
+
+@Juges (livre)|b|Juges 2:16-19; Juges 21:25
+Livre qui couvre la période entre Josué et les rois. Un cycle se répète : Israël abandonne Dieu, est opprimé, crie à lui, et Dieu suscite un juge libérateur (Débora, Gédéon, Samson…). « Chacun faisait ce qui lui semblait bon. »
+
+@Ruth (livre)|b|Ruth 1:16; Ruth 4:13-17
+Court récit qui se déroule au temps des juges : la fidélité de Ruth la Moabite envers sa belle-mère Naomi, et son mariage avec Boaz, le rédempteur. Ruth devient l'arrière-grand-mère de David.
+
+@1 Samuel (livre)|b|1 Samuel 3:10; 1 Samuel 16:7; 1 Samuel 17:45
+Livre qui raconte la vie du prophète Samuel, l'établissement de la royauté avec Saül, puis l'onction et l'ascension de David jusqu'à la mort de Saül.
+
+@2 Samuel (livre)|b|2 Samuel 7:12-16; 2 Samuel 12:13
+Livre consacré au règne de David : la prise de Jérusalem, la promesse d'une royauté éternelle, son péché avec Bath-Schéba et la révolte d'Absalom.
+
+@1 Rois (livre)|b|1 Rois 3:9; 1 Rois 8:27; 1 Rois 18:39
+Livre qui raconte le règne de Salomon et la construction du temple, la division du royaume en deux (Israël au nord, Juda au sud), et le ministère du prophète Élie.
+
+@2 Rois (livre)|b|2 Rois 2:11; 2 Rois 17:6-7; 2 Rois 25:8-11
+Suite de l'histoire des deux royaumes : le ministère d'Élisée, la chute d'Israël sous les Assyriens (722 av. J.-C.), les réformes d'Ézéchias et de Josias, puis la destruction de Jérusalem par Babylone.
+
+@1 Chroniques (livre)|b|1 Chroniques 16:34; 1 Chroniques 29:11
+Reprise de l'histoire d'Israël depuis Adam jusqu'à la mort de David, avec de longues généalogies et une attention particulière au culte et à la préparation du temple.
+
+@2 Chroniques (livre)|b|2 Chroniques 7:14; 2 Chroniques 36:22-23
+Histoire des rois de Juda depuis Salomon jusqu'à l'exil, qui se termine par l'édit de Cyrus. « Si mon peuple sur qui est invoqué mon nom s'humilie, prie, et cherche ma face… je lui pardonnerai son péché. »
+
+@Esdras (livre)|b|Esdras 1:1-3; Esdras 7:10
+Récit du retour des exilés de Babylone à Jérusalem, de la reconstruction du temple et de la réforme menée par le scribe Esdras.
+
+@Néhémie (livre)|b|Néhémie 2:17-18; Néhémie 8:10
+Récit de la reconstruction des murailles de Jérusalem sous la conduite de Néhémie, malgré l'opposition, et du renouvellement de l'alliance autour de la lecture de la loi.
+
+@Esther (livre)|b|Esther 4:14
+Récit de la délivrance des Juifs en Perse grâce à la reine Esther et à Mardochée. Le nom de Dieu n'y figure pas, mais sa providence y est partout visible. Origine de la fête de Purim.
+
+@Job (livre)|b|Job 1:21; Job 19:25; Job 38:4; Job 42:5
+Grand poème sur la souffrance du juste. Job perd tout, débat avec ses amis qui pensent qu'il est puni, puis Dieu lui répond du milieu de la tempête. « Mon oreille avait entendu parler de toi ; mais maintenant mon œil t'a vu. »
+
+@Psaumes (livre)|b|Psaumes 1:1-2; Psaumes 23:1; Psaumes 119:105; Psaumes 150:6
+Recueil de cent cinquante chants et prières d'Israël, dont beaucoup sont attribués à David. On y trouve la louange, la confiance, la plainte, la repentance et l'espérance. C'est le livre de prière et de chant du peuple de Dieu.
+
+@Proverbes (livre)|b|Proverbes 1:7; Proverbes 3:5-6; Proverbes 31:10
+Recueil de maximes de sagesse pour la vie quotidienne, en grande partie attribuées à Salomon. « La crainte de l'Éternel est le commencement de la science. » Il se termine par le portrait de la femme vertueuse.
+
+@Ecclésiaste (livre)|b|Ecclésiaste 1:2; Ecclésiaste 3:1; Ecclésiaste 12:15
+Réflexion du « Prédicateur » sur le sens de la vie : sans Dieu, tout est « vanité des vanités ». « Il y a un temps pour tout. » Conclusion : « Crains Dieu et observe ses commandements. »
+
+@Cantique des cantiques (livre)|b|Cantique des Cantiques 2:16; Cantique des Cantiques 8:6-7
+Poème d'amour entre un bien-aimé et une bien-aimée, célébrant l'amour humain comme don de Dieu. Il a souvent été lu aussi comme une image de l'amour entre Dieu et son peuple, entre Christ et l'Église. « L'amour est fort comme la mort. »
+
+@Ésaïe (livre)|b|Ésaïe 6:8; Ésaïe 9:5; Ésaïe 40:31; Ésaïe 53:5
+Grand livre prophétique de soixante-six chapitres. Il annonce le jugement, mais surtout la consolation et le salut : Emmanuel, le serviteur souffrant, la nouvelle création. « Ceux qui se confient en l'Éternel renouvellent leur force. »
+
+@Jérémie (livre)|b|Jérémie 1:5; Jérémie 29:11; Jérémie 31:33
+Prophéties de Jérémie au temps de la chute de Jérusalem : appels à la repentance, souffrances du prophète et promesse d'une nouvelle alliance. « Je connais les projets que j'ai formés sur vous, dit l'Éternel, projets de paix et non de malheur. »
+
+@Lamentations (livre)|b|Lamentations 3:22-23
+Cinq poèmes de deuil sur la destruction de Jérusalem, traditionnellement attribués à Jérémie. Au cœur de la douleur : « Les bontés de l'Éternel ne sont pas épuisées… Ta fidélité est grande. »
+
+@Ézéchiel (livre)|b|Ézéchiel 36:26; Ézéchiel 37:4-5
+Prophéties d'Ézéchiel en exil à Babylone : visions de la gloire de Dieu, jugement de Jérusalem, puis promesse d'un cœur nouveau, de la résurrection du peuple (les ossements desséchés) et d'un nouveau temple.
+
+@Daniel (livre)|b|Daniel 3:17-18; Daniel 6:23; Daniel 7:13-14
+Récits de la fidélité de Daniel et de ses compagnons à Babylone (la fournaise, la fosse aux lions), suivis de visions sur les empires du monde et le royaume éternel de Dieu.
+
+@Osée (livre)|b|Osée 6:6; Osée 14:2
+Premier des « petits prophètes ». Par son mariage avec une femme infidèle, Osée illustre l'amour fidèle de Dieu pour Israël infidèle. « J'aime la piété et non les sacrifices. »
+
+@Joël (livre)|b|Joël 2:13; Joël 2:28
+Prophète qui, à l'occasion d'une invasion de sauterelles, appelle au retour à Dieu et annonce l'effusion de l'Esprit sur toute chair.
+
+@Amos (livre)|b|Amos 5:24
+Prophéties d'un berger de Juda envoyé au royaume du nord, contre l'injustice sociale et la religion sans justice.
+
+@Abdias (livre)|b|Abdias 1:15
+Le plus court livre de l'Ancien Testament (un seul chapitre) : jugement d'Édom pour son orgueil et sa cruauté envers Juda.
+
+@Jonas (livre)|b|Jonas 2:10; Jonas 4:11
+Récit du prophète Jonas qui fuit l'appel de Dieu, est englouti par un grand poisson, puis prêche à Ninive qui se repent. Il montre la compassion de Dieu pour toutes les nations.
+
+@Michée (livre)|b|Michée 5:1; Michée 6:8
+Prophéties contre l'injustice des puissants, avec l'annonce du Messie qui naîtra à Bethléhem.
+
+@Nahum (livre)|b|Nahum 1:7
+Annonce de la chute de Ninive, capitale de l'Assyrie oppressive. « L'Éternel est bon, il est un refuge au jour de la détresse. »
+
+@Habacuc (livre)|b|Habacuc 2:4; Habacuc 3:17-18
+Dialogue du prophète avec Dieu sur le mal et la justice, qui débouche sur la foi : « Le juste vivra par sa foi. »
+
+@Sophonie (livre)|b|Sophonie 3:17
+Annonce du jour de l'Éternel, puis de la restauration d'un peuple humble. « Il fera de toi sa plus grande joie. »
+
+@Aggée (livre)|b|Aggée 1:4-5
+Appel, au retour de l'exil, à reprendre la reconstruction du temple : « Considérez attentivement vos voies ! »
+
+@Zacharie (livre)|b|Zacharie 4:6; Zacharie 9:9
+Visions encourageant la reconstruction du temple et annonces messianiques : le roi humble monté sur un âne, le berger frappé, celui qu'ils ont percé.
+
+@Malachie (livre)|b|Malachie 3:10; Malachie 4:2
+Dernier livre de l'Ancien Testament. Il reproche au peuple son culte négligé, appelle à la fidélité, notamment dans les dîmes, et annonce le messager qui préparera la venue du Seigneur.
+
+@Matthieu (livre)|b|Matthieu 1:1; Matthieu 5:3; Matthieu 28:19-20
+Premier Évangile, écrit pour montrer que Jésus est le Messie annoncé par les prophètes, le Fils de David. Il contient le sermon sur la montagne et se termine par l'envoi en mission de tous les disciples.
+
+@Marc (livre)|b|Marc 1:1; Marc 10:45
+L'Évangile le plus court et le plus vivant, centré sur les actes de Jésus, le serviteur venu « pour servir et donner sa vie comme la rançon de plusieurs ».
+
+@Luc (livre)|b|Luc 1:3-4; Luc 15:20; Luc 19:10
+Évangile écrit par le médecin Luc après une enquête soigneuse. Il souligne la compassion de Jésus pour les pauvres, les femmes, les étrangers et les pécheurs (le fils prodigue, le bon Samaritain, Zachée).
+
+@Jean (livre)|b|Jean 1:1; Jean 3:16; Jean 20:31
+Quatrième Évangile, écrit « afin que vous croyiez que Jésus est le Christ, le Fils de Dieu ». Il rapporte les grands « Je suis » de Jésus et ses longs entretiens avec ses disciples.
+
+@Actes des apôtres (livre)|b|Actes 1:8; Actes 2:42
+Suite de l'Évangile de Luc : l'ascension, la Pentecôte et l'expansion de l'Église de Jérusalem jusqu'à Rome, avec Pierre puis Paul. « Vous serez mes témoins… jusqu'aux extrémités de la terre. »
+
+@Romains (épître)|b|Romains 1:16; Romains 3:23-24; Romains 8:1; Romains 12:1-2
+Lettre de Paul aux chrétiens de Rome, l'exposé le plus complet de l'Évangile : tous ont péché, tous peuvent être justifiés gratuitement par la foi en Christ, et vivre une vie nouvelle par l'Esprit.
+
+@1 Corinthiens (épître)|b|1 Corinthiens 1:18; 1 Corinthiens 13:13; 1 Corinthiens 15:3-4
+Lettre de Paul à une Église divisée et troublée : unité, pureté, mariage, dons spirituels, amour (chapitre 13) et résurrection (chapitre 15).
+
+@2 Corinthiens (épître)|b|2 Corinthiens 5:17; 2 Corinthiens 12:9
+Lettre très personnelle de Paul, qui défend son ministère et parle de la force de Dieu dans la faiblesse. « Ma grâce te suffit. »
+
+@Galates (épître)|b|Galates 2:20; Galates 5:1; Galates 5:22-23
+Lettre de Paul pour défendre la liberté de l'Évangile : on est justifié par la foi et non par les œuvres de la loi. Elle décrit le fruit de l'Esprit.
+
+@Éphésiens (épître)|b|Éphésiens 2:8-10; Éphésiens 6:10-11
+Lettre sur les richesses du croyant en Christ, l'unité de l'Église, la vie de famille et le combat spirituel avec l'armure de Dieu.
+
+@Philippiens (épître)|b|Philippiens 2:5-8; Philippiens 4:4; Philippiens 4:13
+Lettre de la joie, écrite par Paul en prison : « Réjouissez-vous toujours dans le Seigneur. » Elle contient l'hymne à l'abaissement de Christ. « Je puis tout par celui qui me fortifie. »
+
+@Colossiens (épître)|b|Colossiens 1:15-18; Colossiens 3:1-2
+Lettre qui affirme la suprématie de Christ, « image du Dieu invisible », contre les fausses doctrines, et appelle à chercher les choses d'en haut.
+
+@1 Thessaloniciens (épître)|b|1 Thessaloniciens 4:16-17; 1 Thessaloniciens 5:16-18
+Lettre d'encouragement à une jeune Église persécutée, avec un enseignement sur le retour du Seigneur. « Soyez toujours joyeux. Priez sans cesse. Rendez grâces en toutes choses. »
+
+@2 Thessaloniciens (épître)|b|2 Thessaloniciens 3:3
+Seconde lettre qui corrige des malentendus sur le jour du Seigneur et exhorte à travailler paisiblement.
+
+@1 Timothée (épître)|b|1 Timothée 1:15; 1 Timothée 4:12
+Lettre de Paul à son jeune collaborateur sur la conduite de l'Église : enseignement sain, prière, responsables. « Christ est venu dans le monde pour sauver les pécheurs, dont je suis le premier. »
+
+@2 Timothée (épître)|b|2 Timothée 3:16; 2 Timothée 4:7
+Dernière lettre de Paul avant sa mort, qui exhorte Timothée à rester fidèle à l'Écriture et à prêcher la parole. « J'ai combattu le bon combat. »
+
+@Tite (épître)|b|Tite 2:11-14
+Lettre à Tite, chargé d'organiser les Églises de Crète : qualités des anciens et vie transformée par la grâce.
+
+@Philémon (épître)|b|Philémon 1:16
+Courte lettre de Paul demandant à Philémon d'accueillir son esclave fugitif Onésime, devenu chrétien, « comme un frère bien-aimé ».
+
+@Hébreux (épître)|b|Hébreux 1:1-3; Hébreux 4:12; Hébreux 11:1; Hébreux 12:1-2
+Lettre adressée à des chrétiens d'origine juive pour montrer que Jésus est supérieur aux anges, à Moïse et aux sacrifices : il est le souverain sacrificateur parfait. Le chapitre 11 est la galerie des héros de la foi.
+
+@Jacques (épître)|b|Jacques 1:22; Jacques 2:17
+Lettre pratique sur la foi vivante qui se montre par les œuvres : mettre la parole en pratique, maîtriser sa langue, ne pas faire de favoritisme, prier dans la foi.
+
+@1 Pierre (épître)|b|1 Pierre 1:3; 1 Pierre 2:9; 1 Pierre 5:7
+Lettre d'espérance à des chrétiens dispersés et éprouvés. « Déchargez-vous sur lui de tous vos soucis, car lui-même prend soin de vous. »
+
+@2 Pierre (épître)|b|2 Pierre 1:21; 2 Pierre 3:9
+Lettre qui met en garde contre les faux docteurs et rappelle la certitude du retour du Seigneur, qui « use de patience envers vous, ne voulant pas qu'aucun périsse ».
+
+@1 Jean (épître)|b|1 Jean 1:9; 1 Jean 4:8; 1 Jean 5:13
+Lettre sur la communion avec Dieu, la lumière, l'amour fraternel et l'assurance du salut. « Dieu est amour. »
+
+@2 Jean (épître)|b|2 Jean 1:6
+Courte lettre à « Kyria élue et à ses enfants » : marcher dans la vérité et l'amour, se garder des séducteurs.
+
+@3 Jean (épître)|b|3 Jean 1:4
+Courte lettre à Gaïus, félicité pour son hospitalité envers les missionnaires. « Je n'ai pas de plus grande joie que d'apprendre que mes enfants marchent dans la vérité. »
+
+@Jude (épître)|b|Jude 1:3; Jude 1:24-25
+Courte lettre qui exhorte à combattre pour la foi contre les faux docteurs, et se termine par une belle louange à « celui qui peut vous préserver de toute chute ».
+
+@Apocalypse (livre)|b|Apocalypse 1:8; Apocalypse 3:20; Apocalypse 21:4; Apocalypse 22:20
+Dernier livre de la Bible, révélation reçue par Jean à Patmos. Lettres aux sept Églises, visions du trône de Dieu et de l'Agneau, combats contre le mal, puis victoire finale et nouvelle Jérusalem. « Voici, je fais toutes choses nouvelles. »

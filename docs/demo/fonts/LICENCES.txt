@@ -1,0 +1,5 @@
+Polices embarquées dans BibleCast (affichage hors ligne sur les TV), sous-ensemble latin :
+- Lora — SIL Open Font License 1.1 (Cyreal)
+- Lato — SIL Open Font License 1.1 (Łukasz Dziedzic)
+- Poppins — SIL Open Font License 1.1 (Indian Type Foundry)
+- Roboto Slab — Apache License 2.0 (Google)

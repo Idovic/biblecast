@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dégradé identique à Display.tsx mode vide :
+     linear-gradient(135deg, #1e1b4b → #1c2f6b → #0d1b2a) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:type="linear"
+        android:angle="135"
+        android:startColor="#1e1b4b"
+        android:centerColor="#1c2f6b"
+        android:endColor="#0d1b2a" />
+</shape>

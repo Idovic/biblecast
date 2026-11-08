@@ -1,0 +1,193 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Polices embarquées (hors ligne) — voir public/fonts/LICENCES.txt */
+@font-face { font-family: 'Lora'; src: url('/fonts/lora.woff') format('woff'); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: 'Lato'; src: url('/fonts/lato-400.woff') format('woff'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Lato'; src: url('/fonts/lato-700.woff') format('woff'); font-weight: 600 700; font-display: swap; }
+@font-face { font-family: 'Poppins'; src: url('/fonts/poppins-400.woff') format('woff'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Poppins'; src: url('/fonts/poppins-700.woff') format('woff'); font-weight: 600 700; font-display: swap; }
+@font-face { font-family: 'Roboto Slab'; src: url('/fonts/robotoslab-400.woff') format('woff'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Roboto Slab'; src: url('/fonts/robotoslab-700.woff') format('woff'); font-weight: 600 700; font-display: swap; }
+:root {
+  --bc-serif: 'Lora', 'Noto Serif', 'Droid Serif', Georgia, serif;
+  --bc-sans: 'Lato', Roboto, 'Noto Sans', Arial, sans-serif;
+}
+
+
+/* BibleCast Design System — Palette violet profond + accents dorés */
+
+@layer base {
+  :root {
+    --background: 252 40% 14%;
+    --foreground: 245 40% 95%;
+
+    --card: 252 35% 16%;
+    --card-foreground: 245 40% 95%;
+
+    --popover: 252 35% 16%;
+    --popover-foreground: 245 40% 95%;
+
+    --primary: 43 78% 59%;
+    --primary-foreground: 252 40% 8%;
+
+    --secondary: 252 30% 20%;
+    --secondary-foreground: 245 25% 80%;
+
+    --muted: 252 25% 18%;
+    --muted-foreground: 245 20% 58%;
+
+    --accent: 43 78% 59%;
+    --accent-foreground: 252 40% 8%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 252 20% 22%;
+    --input: 252 20% 22%;
+    --ring: 43 78% 59%;
+
+    --radius: 0.625rem;
+
+    --sidebar-background: 252 40% 10%;
+    --sidebar-foreground: 245 25% 80%;
+    --sidebar-primary: 43 78% 59%;
+    --sidebar-primary-foreground: 252 40% 8%;
+    --sidebar-accent: 252 30% 17%;
+    --sidebar-accent-foreground: 245 25% 80%;
+    --sidebar-border: 252 25% 20%;
+    --sidebar-ring: 43 78% 59%;
+
+    /* Tokens BibleCast */
+    --gold: 43 78% 59%;
+    --gold-foreground: 252 40% 8%;
+    --gold-muted: 43 50% 35%;
+    --surface: 252 35% 16%;
+    --surface-hover: 252 30% 20%;
+    --glass-bg: 252 30% 16%;
+    --glass-border: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Lato', system-ui, sans-serif;
+    background: linear-gradient(160deg, hsl(252 40% 14%) 0%, hsl(270 45% 18%) 100%);
+    min-height: 100vh;
+  }
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: hsl(var(--glass-bg) / 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--glass-border) / 0.08);
+}
+
+/* Golden glow button */
+.btn-gold {
+  background: hsl(var(--gold));
+  color: hsl(var(--gold-foreground));
+  font-weight: 700;
+  transition: all 200ms ease;
+  box-shadow: 0 2px 8px hsl(var(--gold) / 0.25);
+}
+
+.btn-gold:hover {
+  box-shadow: 0 4px 20px hsl(var(--gold) / 0.45), 0 0 0 2px hsl(var(--gold) / 0.15);
+  transform: translateY(-1px);
+}
+
+.btn-gold:active {
+  transform: translateY(0);
+}
+
+/* Smooth transitions on interactive elements */
+@layer utilities {
+  .transition-smooth {
+    transition: all 200ms ease;
+  }
+}
+
+/* Thèmes d'affichage pour la page /display */
+.theme-noir-classique {
+  --display-bg: 240 20% 4%;
+  --display-fg: 0 0% 100%;
+}
+.theme-bleu-nuit {
+  --display-bg: 220 50% 8%;
+  --display-fg: 210 30% 95%;
+}
+.theme-bordeaux {
+  --display-bg: 350 50% 10%;
+  --display-fg: 350 20% 95%;
+}
+.theme-foret-sombre {
+  --display-bg: 150 40% 8%;
+  --display-fg: 140 20% 92%;
+}
+.theme-blanc-lumineux {
+  --display-bg: 0 0% 98%;
+  --display-fg: 0 0% 8%;
+}
+
+/* ── Éditeur riche Tiptap (tablette) ── */
+.rich-editor-content .ProseMirror {
+  outline: none;
+}
+.rich-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+.rich-editor-content .ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.25em;
+}
+.rich-editor-content .ProseMirror strong { font-weight: 700; }
+.rich-editor-content .ProseMirror em { font-style: italic; }
+.rich-editor-content .ProseMirror u  { text-decoration: underline; }
+
+/* ── Rendu slide riche sur TV ── */
+.slide-rich-content strong { font-weight: 700; }
+.slide-rich-content em     { font-style: italic; }
+.slide-rich-content u      { text-decoration: underline; }
+.slide-rich-content ul {
+  display: inline-block;
+  text-align: left;
+  list-style: none;
+  padding: 0;
+}
+.slide-rich-content ul li  { display: flex; align-items: flex-start; gap: 0.6em; margin-bottom: 0.4em; }
+.slide-rich-content ul li::before {
+  content: '•';
+  opacity: 0.7;
+  flex-shrink: 0;
+  margin-top: 0.1em;
+}
+.slide-rich-content p + p { margin-top: 0.5em; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
