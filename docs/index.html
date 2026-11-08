@@ -209,7 +209,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .qr { width: 112px; background: #fff; padding: 6px; border-radius: 12px; }
 .short { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9rem; color: var(--fg); background: var(--bg); border: 1px solid var(--line); padding: 3px 8px; border-radius: 8px; word-break: break-all; }
 .soon { grid-column: 1 / -1; font-size: .85rem; color: var(--gold); display: none; }
-body.no-apk .soon { display: block; }
+.apk.no-apk .soon { display: block; }
 @media (max-width: 760px) { .dl { grid-template-columns: 1fr; } .qr { width: 92px; } }
 .tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); margin-bottom: 22px; flex-wrap: wrap; }
 .tabs button { font: 700 .95rem var(--sans); color: var(--muted); background: none; border: 0; padding: 10px 18px; border-radius: 10px; cursor: pointer; min-height: 44px; }
@@ -587,11 +587,11 @@ footer::before { content: ""; position: absolute; left: 50%; top: -160px; width:
       <div class="apk reveal">
         <div style="display:grid;gap:6px">
           <h3>BibleCast Tablette</h3>
-          <p class="meta">Régie · Android 7 ou plus · v2.0</p>
+          <p class="meta">Régie · Android 7 ou plus · v2.0 · 86 Mo</p>
           <p class="meta">Depuis la tablette, scannez le code ou tapez<br><span class="short">idovic.github.io/biblecast/tablette</span></p>
         </div>
         <img class="qr" src="img/qr-tablette.svg" alt="Code QR pour télécharger l'app tablette" width="112" height="112">
-        <a class="btn btn-gold apk-link" href="https://github.com/Idovic/biblecast/releases/latest/download/BibleCast-tablette.apk"><svg><use href="#i-dl"/></svg>Télécharger pour tablette</a>
+        <a class="btn btn-gold apk-link" data-apk="tablette" href="https://github.com/Idovic/biblecast/releases/latest/download/BibleCast-Tablette.apk"><svg><use href="#i-dl"/></svg>Télécharger pour tablette</a>
         <p class="soon">Le fichier d'installation arrive très bientôt.</p>
       </div>
       <div class="apk reveal">
@@ -601,7 +601,7 @@ footer::before { content: ""; position: absolute; left: 50%; top: -160px; width:
           <p class="meta">Adresse courte, à taper sur la TV<br><span class="short">idovic.github.io/biblecast/tv</span></p>
         </div>
         <span class="logo" style="width:92px;height:92px;border-radius:20px" aria-hidden="true"><svg style="width:44px;height:44px;color:var(--gold)"><use href="#i-tv"/></svg></span>
-        <a class="btn btn-ghost apk-link" href="https://github.com/Idovic/biblecast/releases/latest/download/BibleCast-TV.apk"><svg><use href="#i-dl"/></svg>Télécharger pour TV</a>
+        <a class="btn btn-ghost apk-link" data-apk="tv" href="https://github.com/Idovic/biblecast/releases/latest/download/BibleCast-TV.apk"><svg><use href="#i-dl"/></svg>Télécharger pour TV</a>
         <p class="soon">Le fichier d'installation arrive très bientôt.</p>
       </div>
     </div>
@@ -613,7 +613,7 @@ footer::before { content: ""; position: absolute; left: 50%; top: -160px; width:
     </div>
 
     <ol class="steps" id="st-tab">
-      <li><h3>Télécharger</h3><p>Scannez le code QR ci-dessus avec la tablette, ou ouvrez l'adresse dans Chrome. Le fichier <b style="color:var(--fg)">BibleCast-tablette.apk</b> se télécharge.</p></li>
+      <li><h3>Télécharger</h3><p>Scannez le code QR ci-dessus avec la tablette, ou ouvrez l'adresse dans Chrome. Le fichier <b style="color:var(--fg)">BibleCast-Tablette.apk</b> se télécharge.</p></li>
       <li><h3>Autoriser l'installation</h3><p>Ouvrez le fichier. Android demande l'autorisation pour les « sources inconnues » : touchez <b style="color:var(--fg)">Paramètres</b>, activez l'autorisation, puis revenez.</p><p class="path">Paramètres → Applications → Chrome → Installer des applis inconnues</p></li>
       <li><h3>Installer</h3><p>Touchez <b style="color:var(--fg)">Installer</b>. Si Play Protect affiche un avertissement, choisissez « Installer quand même » : l'app n'est simplement pas sur le Play Store.</p></li>
       <li><h3>Se connecter au Wi-Fi</h3><p>Connectez la tablette au Wi-Fi du dongle (ou du routeur). Android peut dire « pas d'Internet » : choisissez de <b style="color:var(--fg)">rester connecté</b>.</p></li>
@@ -736,12 +736,13 @@ footer::before { content: ""; position: absolute; left: 50%; top: -160px; width:
 
 <script>
 /* Passer à true quand les APK sont publiés dans les Releases GitHub */
-var APK_READY = false;
+var APK_READY = { tablette: true, tv: false };
 (function () {
-  if (!APK_READY) {
-    document.body.classList.add('no-apk');
-    document.querySelectorAll('.apk-link').forEach(function (a) { a.href = 'https://github.com/Idovic/biblecast/releases'; a.target = '_blank'; a.rel = 'noopener'; });
-  }
+  document.querySelectorAll('.apk-link').forEach(function (a) {
+    if (APK_READY[a.dataset.apk]) return;
+    a.closest('.apk').classList.add('no-apk');
+    a.href = 'https://github.com/Idovic/biblecast/releases'; a.target = '_blank'; a.rel = 'noopener';
+  });
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* Onde de l'accroche */
