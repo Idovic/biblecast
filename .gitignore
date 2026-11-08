@@ -1,3 +1,8 @@
 node_modules/
 .DS_Store
 *.log
+
+# Clés de signature : ne jamais les publier
+*.jks
+*.keystore
+keystore.properties
