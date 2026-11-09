@@ -1,9 +1,9 @@
 /* Édition d'une slide en grand, au centre : aperçu rendu comme sur la TV en haut,
    réglages en dessous avec des boutons faits pour le doigt (44 px). */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   X, Send, Plus, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, BookOpen, Scissors,
-  FileText, Presentation, List, Frame, Check, Sparkles,
+  FileText, Presentation, List, Frame, Check, Sparkles, KeyboardOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -100,7 +100,7 @@ function Seg<T extends string>({ value, options, onChange }: { value: T; options
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
-    <div className="space-y-1.5">
+    <div data-field className="space-y-1.5 scroll-mt-28">
       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
       {children}
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
@@ -128,6 +128,35 @@ export default function SlideEditPanel({ slide, where, onChange, onSplit, onClos
   const [verseError, setVerseError] = useState('');
   const [added, setAdded] = useState(false);
   const [editorKey, setEditorKey] = useState(0); // recrée l'éditeur quand le texte est rempli depuis la Bible
+
+  /* Clavier de la tablette : pendant la saisie, l'aperçu devient une vignette et le champ
+     remonte en haut, pour rester visible au-dessus du clavier. */
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [typing, setTyping] = useState(false);
+  useEffect(() => {
+    const box = scrollRef.current;
+    if (!box) return;
+    let blurTimer: ReturnType<typeof setTimeout> | undefined;
+    const isField = (el: EventTarget | null): el is HTMLElement =>
+      el instanceof HTMLElement && (el.isContentEditable || el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !['button', 'checkbox', 'radio', 'range', 'color', 'file'].includes((el as HTMLInputElement).type)));
+    const reveal = (el: HTMLElement) => {
+      const target = el.closest('[data-field]') as HTMLElement | null ?? el;
+      target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    };
+    const onIn = (e: FocusEvent) => {
+      if (!isField(e.target)) return;
+      clearTimeout(blurTimer);
+      setTyping(true);
+      const el = e.target;
+      setTimeout(() => reveal(el), 120);
+      setTimeout(() => reveal(el), 450); // une fois le clavier monté
+    };
+    const onOut = () => { blurTimer = setTimeout(() => { if (!isField(document.activeElement)) setTyping(false); }, 150); };
+    box.addEventListener('focusin', onIn);
+    box.addEventListener('focusout', onOut);
+    return () => { box.removeEventListener('focusin', onIn); box.removeEventListener('focusout', onOut); clearTimeout(blurTimer); };
+  }, []);
+  const hideKeyboard = () => { (document.activeElement as HTMLElement | null)?.blur(); setTyping(false); };
 
   // Photos : fonds fournis + images de la galerie
   useEffect(() => {
@@ -172,13 +201,23 @@ export default function SlideEditPanel({ slide, where, onChange, onSplit, onClos
         <Button onClick={onClose} className="h-11 px-4 gap-1.5 btn-gold"><Check className="h-4 w-4" /> Terminé</Button>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        {/* Aperçu en direct, rendu comme sur la TV */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur px-4 pt-3 pb-3 border-b border-border/30">
-          <div className="max-w-xl mx-auto rounded-lg overflow-hidden border border-border/50">
-            <SceneView content={scene} theme={theme} settings={settings} />
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
+        {/* Aperçu en direct, rendu comme sur la TV (en vignette pendant la saisie) */}
+        <div className={cn('sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/30', typing ? 'px-4 py-2' : 'px-4 pt-3 pb-3')}>
+          <div className={cn('max-w-xl mx-auto', typing && 'flex items-center gap-3')}>
+            <div className={cn('rounded-lg overflow-hidden border border-border/50', typing ? 'w-36 shrink-0' : '')}>
+              <SceneView content={scene} theme={theme} settings={settings} />
+            </div>
+            {typing && (
+              <>
+                <p className="flex-1 text-xs text-muted-foreground leading-snug">Aperçu réduit pendant la saisie</p>
+                <Button variant="secondary" className="h-11 gap-1.5 shrink-0" onMouseDown={e => e.preventDefault()} onClick={hideKeyboard}>
+                  <KeyboardOff className="h-4 w-4" /> Fermer le clavier
+                </Button>
+              </>
+            )}
           </div>
-          {tooLong && (
+          {tooLong && !typing && (
             <div className="max-w-xl mx-auto mt-2 rounded-lg bg-amber-500/10 border border-amber-500/40 px-3 py-2 flex items-center gap-2 text-xs text-amber-200">
               <span className="flex-1">Texte long : il sera petit sur la TV.</span>
               <Button size="sm" variant="secondary" className="h-10 gap-1.5" onClick={() => onSplit(splitSlide(slide))}>
@@ -339,11 +378,13 @@ export default function SlideEditPanel({ slide, where, onChange, onSplit, onClos
               </div>
             </>
           )}
+          {/* Espace pour pouvoir remonter le dernier champ au-dessus du clavier */}
+          {typing && <div aria-hidden className="h-[55vh]" />}
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="p-3 border-t border-border flex gap-2 shrink-0">
+      {/* Actions (cachées pendant la saisie : le clavier les couvrirait) */}
+      <div className={cn('p-3 border-t border-border flex gap-2 shrink-0', typing && 'hidden')}>
         <Button onClick={() => onProject(slide)} className="flex-[2] h-12 text-base font-bold btn-gold rounded-xl gap-2">
           <Send className="h-5 w-5" /> PROJETER
         </Button>
