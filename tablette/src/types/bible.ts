@@ -19,7 +19,7 @@ export interface VerseReference {
   version?: string;
 }
 
-export type SlideType = 'text-title' | 'title-only' | 'verse-title' | 'blank' | 'bullet-list' | 'image-full' | 'definition' | 'info';
+export type SlideType = 'text-title' | 'title-only' | 'verse-title' | 'blank' | 'bullet-list' | 'image-full' | 'definition' | 'info' | 'song';
 
 export interface CustomSlide {
   id: string;
@@ -71,7 +71,7 @@ export interface PresentationMeta {
 
 export interface QueueItem {
   id: string;
-  type: 'verse' | 'slide' | 'section';
+  type: 'verse' | 'slide' | 'section' | 'song';
   verse?: VerseReference;
   slide?: CustomSlide;
   sectionName?: string;
@@ -80,7 +80,12 @@ export interface QueueItem {
   collapsed?: boolean;
   /** Onde décorative pendant cet élément (ou tout ce moment, pour une section) */
   wave?: boolean;
+  /** Chant (copie au moment de l'ajout : le déroulé reste valable même si le chant change) */
+  song?: SongRef;
 }
+
+/** Chant dans le déroulé */
+export interface SongRef { id: string; title: string; author?: string; lyrics: string; order?: string; linesPerScreen?: number; background?: string; updatedAt: number }
 
 /** Rôle d'une TV : tout afficher, tout sauf les vidéos, ou rester sur l'horloge */
 export type TvRole = 'miroir' | 'sans-video' | 'horloge';

@@ -13,6 +13,7 @@ BibleCast transforme une tablette Android en régie de culte : versets, déroul�
 - **La Bible en un instant** : Louis Segond 1910 et Darby, recherche par référence (« jn 3 16 ») ou par mots, comparaison des deux versions.
 - **Dictionnaire biblique** : 622 articles (personnages, lieux, mots de la foi, coutumes, fêtes, les 66 livres), projetables écran par écran. L'église peut corriger ou ajouter des articles.
 - **Déroulé du culte** : modèles prêts (culte du dimanche, réunion de prière, étude biblique), moments, mode Direct avec « Suivant ».
+- **Chants** : on colle les paroles, l'app les découpe en écrans et fait revenir le refrain ; partage des recueils par fichier entre églises.
 - **Slides, fonds animés, PDF et PowerPoint** (exporté en PDF), **images** et **vidéos** (copiées sur les TV avant le culte).
 - **Onde de louange**, **bandeau d'annonces**, **écran d'attente** (verset du jour, horloge), **NOIR / LOGO / FOND SEUL**.
 - **Écoute de la prédication** : la tablette entend « Jean trois seize » et propose le verset (reconnaissance vocale hors ligne).

@@ -13,6 +13,7 @@ import { importBDS, clearBDSCache } from '@/lib/bible';
 import { ANIMATED_BACKGROUNDS } from '@/components/scene/animated';
 import { SceneView, DEFAULT_PHOTO_VEIL } from '@/components/scene/Scene';
 import type { CustomSlide, DisplayTheme } from '@/types/bible';
+import { loadSongs, saveSongs, type Song } from '@/lib/songs';
 
 /** Groupe de boutons à choix unique (grands boutons, faciles au doigt) */
 function Choice<T extends string>({ value, options, onChange }: { value: T; options: { value: T; label: string; hint?: string }[]; onChange: (v: T) => void }) {
@@ -83,6 +84,8 @@ export interface ChurchSettings {
   logoPosition?: 'haut' | 'coin';
   /** Voile sombre des photos et vidéos de fond, de 0 à 80 (%) */
   photoVeil?: number;
+  /** Onde allumée pendant les chants (par défaut : oui) */
+  songWave?: boolean;
 }
 
 const STORAGE_KEY = 'biblecast-settings';
@@ -255,6 +258,8 @@ export default function SettingsPanel({ onClose, onBible2Imported, theme }: Sett
     const backup: Record<string, unknown> = { _version: 2, _date: new Date().toISOString() };
     // Pages des présentations PDF / images (IndexedDB)
     try { backup._presentationPages = await idbExportAll(); } catch { /* ignore */ }
+    // Bibliothèque de chants (IndexedDB)
+    try { backup._songs = await loadSongs(); } catch { /* ignore */ }
     BACKUP_KEYS.forEach(key => {
       const val = localStorage.getItem(key);
       if (val !== null) {
@@ -310,6 +315,7 @@ export default function SettingsPanel({ onClose, onBible2Imported, theme }: Sett
               try { localStorage.setItem(key, typeof data[key] === 'string' ? data[key] : JSON.stringify(data[key])); } catch { /* plein */ }
             }
           });
+          if (Array.isArray(data._songs) && data._songs.length) saveSongs(data._songs as Song[]).catch(() => {});
           if (data._presentationPages && typeof data._presentationPages === 'object') {
             idbImportAll(data._presentationPages as Record<string, string[]>).catch(() => {});
           }

@@ -1,6 +1,6 @@
 /* Page principale — Mode Présentateur */
 import { useState, useEffect, useCallback, useRef, useMemo, useReducer } from 'react';
-import { Monitor, BookOpen, Image, Layout, Settings, MonitorOff, Film, Presentation, Mic, Square, Layers, Clock, ClipboardCheck, GraduationCap } from 'lucide-react';
+import { Monitor, BookOpen, Image, Layout, Settings, MonitorOff, Film, Presentation, Mic, Square, Layers, Clock, ClipboardCheck, GraduationCap, Music2 } from 'lucide-react';
 import PreflightPanel, { useBattery, runChecks, worstStatus } from '@/components/PreflightPanel';
 import GuideTour, { GUIDE_DONE_KEY } from '@/components/GuideTour';
 import { Capacitor } from '@capacitor/core';
@@ -12,6 +12,8 @@ import PreviewPanel from '@/components/PreviewPanel';
 import QueuePanel from '@/components/QueuePanel';
 import GalleryPanel from '@/components/GalleryPanel';
 import SlidesEditor from '@/components/SlidesEditor';
+import SongsPanel from '@/components/SongsPanel';
+import { songSlides, type Song } from '@/lib/songs';
 import SettingsPanel, { loadSettings, saveSettings, type ChurchSettings } from '@/components/SettingsPanel';
 import CastButton from '@/components/CastButton';
 import SplashScreen from '@/components/SplashScreen';
@@ -47,6 +49,7 @@ function itemToScene(item: QueueItem | undefined, id: number): SceneContentData 
   if (!item) return null;
   if (item.type === 'verse' && item.verse) return { id, kind: 'verse', verse: item.verse };
   if (item.type === 'slide' && item.slide) return { id, kind: 'slide', slide: item.slide };
+  if (item.type === 'song' && item.song) { const sl = songSlides(item.song)[0]; return sl ? { id, kind: 'slide', slide: sl } : null; }
   return null;
 }
 const CONTENT_TYPES: DisplayMessage['type'][] = ['show-verse', 'show-dual-verse', 'show-slide', 'clear'];
@@ -457,6 +460,8 @@ export default function Index() {
   // D'où vient ce qui est projeté : la Bible (▶ = verset suivant), un passage (▶ = écran suivant) ou le déroulé
   const sourceRef = useRef<'bible' | 'timeline' | null>(null);
   const passageRef = useRef<{ pages: VerseReference[]; index: number } | null>(null);
+  // Chant en cours : ▶ passe à l'écran suivant ; venu du déroulé, il enchaîne ensuite sur l'élément suivant
+  const songRef = useRef<{ slides: CustomSlide[]; index: number; fromTimeline: boolean; wave: boolean } | null>(null);
 
   const handleProjectVerse = useCallback((verse: VerseReference, forced2?: VerseReference | null) => {
     // Double version : le parallèle est recalculé pour CE verset (pas celui touché avant) ;
@@ -468,7 +473,7 @@ export default function Index() {
     } else {
       send({ type: 'show-verse', verse });
     }
-    sourceRef.current = 'bible'; passageRef.current = null;
+    sourceRef.current = 'bible'; passageRef.current = null; songRef.current = null;
     setSelectedVerse(verse);
     setSelectedSlide(null);
     setProjectedVerse(verse);
@@ -512,7 +517,7 @@ export default function Index() {
     const base = { ...cur.verse, highlights: undefined };
     const next = stepVerse(bible, base, dir);
     if (!next) return true;
-    passageRef.current = null;
+    passageRef.current = null; songRef.current = null;
     if (cur.type === 'show-dual-verse' && bible2) {
       const v2 = getParallelVerse(bible2, next);
       send({ type: 'show-dual-verse', verse: next, verse2: v2 }); setSelectedVerse2(v2);
@@ -521,6 +526,41 @@ export default function Index() {
     lastProjectionTimeRef.current = Date.now();
     return true;
   }, [send, bible, bible2]);
+
+  /** Chant : projeté à partir de l'écran `index` */
+  const projectSongAt = useCallback((song: Song, index: number, fromTimeline = false, wave?: boolean) => {
+    const sl = songSlides(song);
+    if (!sl.length) return;
+    const i = Math.max(0, Math.min(index, sl.length - 1));
+    const prevWave = songRef.current?.wave;
+    passageRef.current = null;
+    const w = wave ?? prevWave ?? settings.songWave !== false;
+    songRef.current = { slides: sl, index: i, fromTimeline, wave: w };
+    if (!fromTimeline) sourceRef.current = null;
+    waveIntentRef.current = w;
+    send({ type: 'show-slide', slide: sl[i] });
+    setSelectedSlide(sl[i]); setSelectedVerse(null); setProjectedSlide(sl[i]); setProjectedVerse(null);
+    lastProjectionTimeRef.current = Date.now();
+  }, [send, settings.songWave]);
+  const handleProjectSong = useCallback((song: Song, index: number) => {
+    const sameSong = songRef.current && songRef.current.slides[0]?.id.replace(/-\d+$/, '') === song.id;
+    projectSongAt(song, index, sameSong ? songRef.current!.fromTimeline : false);
+    if (!sameSong) setHistory(prev => [{ id: genId(), type: 'song', song: { ...song } }, ...prev]);
+  }, [projectSongAt]);
+  const stepSong = useCallback((dir: 1 | -1): boolean => {
+    const sr = songRef.current;
+    if (!sr || targetTvRef.current) return false;
+    const i = sr.index + dir;
+    if (i >= 0 && i < sr.slides.length) {
+      sr.index = i;
+      waveIntentRef.current = sr.wave;
+      send({ type: 'show-slide', slide: sr.slides[i] });
+      setSelectedSlide(sr.slides[i]); setProjectedSlide(sr.slides[i]);
+      return true;
+    }
+    // Fin du chant : depuis le déroulé, on passe à l'élément suivant ; sinon on reste sur le dernier écran
+    return !sr.fromTimeline;
+  }, [send]);
 
   /** Mot mis en valeur sur la TV (verset en direct) */
   const handleToggleWord = useCallback((index: number) => {
@@ -532,7 +572,7 @@ export default function Index() {
   }, [send]);
 
   const handleProjectSlide = useCallback((slide: CustomSlide) => {
-    sourceRef.current = null; passageRef.current = null;
+    sourceRef.current = null; passageRef.current = null; songRef.current = null;
     send({ type: 'show-slide', slide: prepSlide(slide) });
     setSelectedSlide(slide);
     setSelectedVerse(null);
@@ -544,7 +584,7 @@ export default function Index() {
   }, [send]);
 
   const handleSendToDisplay = useCallback(() => {
-    passageRef.current = null;
+    passageRef.current = null; songRef.current = null;
     sourceRef.current = selectedVerse ? 'bible' : null;
     if (selectedVerse) {
       if (selectedVerse2) {
@@ -571,6 +611,9 @@ export default function Index() {
   const addItems = useCallback((items: QueueItem[]) => {
     setQueue(prev => insertIntoSection(prev, activeSectionId, items));
   }, [activeSectionId]);
+  const handleAddSongToDeroule = useCallback((song: Song) => {
+    addItems([{ id: genId(), type: 'song', song: { ...song } }]);
+  }, [addItems]);
 
   const handleAddToQueue = useCallback(() => {
     if (selectedVerse) addItems([{ id: genId(), type: 'verse', verse: selectedVerse }]);
@@ -613,7 +656,7 @@ export default function Index() {
   }, []);
 
   const handleTimelineSendItem = useCallback((item: QueueItem) => {
-    sourceRef.current = 'timeline'; passageRef.current = null;
+    sourceRef.current = 'timeline'; passageRef.current = null; songRef.current = null;
     const sec = sectionOf(queue)[item.id];
     waveIntentRef.current = !!(item.wave || (sec && queue.find(q => q.id === sec)?.wave));
     if (item.type === 'verse' && item.verse) {
@@ -628,11 +671,15 @@ export default function Index() {
       setSelectedVerse(null);
       setProjectedVerse(null);
       setProjectedSlide(item.slide);
+    } else if (item.type === 'song' && item.song) {
+      const w = waveIntentRef.current || settings.songWave !== false;
+      songRef.current = null;
+      projectSongAt(item.song, 0, true, w);
     }
     lastProjectionTimeRef.current = Date.now();
     setCurrentTimelineId(item.id);
     setHistory(prev => [item, ...prev]);
-  }, [send, queue]);
+  }, [send, queue, projectSongAt, settings.songWave]);
 
   /** Liste point par point en cours : montre (ou retire) un point. Renvoie true si c'était le cas. */
   const stepReveal = useCallback((dir: 1 | -1): boolean => {
@@ -647,6 +694,7 @@ export default function Index() {
 
   const handleTimelineNext = useCallback(() => {
     if (stepReveal(1)) return;
+    if (stepSong(1)) return;
     if (stepFollow(1)) return;
     const nonSection = queue.filter(q => q.type !== 'section');
     if (nonSection.length === 0) return;
@@ -656,16 +704,17 @@ export default function Index() {
     }
     const idx = nonSection.findIndex(q => q.id === currentTimelineId);
     if (idx < nonSection.length - 1) handleTimelineSendItem(nonSection[idx + 1]);
-  }, [queue, currentTimelineId, handleTimelineSendItem, stepReveal, stepFollow]);
+  }, [queue, currentTimelineId, handleTimelineSendItem, stepReveal, stepFollow, stepSong]);
 
   const handleTimelinePrev = useCallback(() => {
     if (stepReveal(-1)) return;
+    if (stepSong(-1)) return;
     if (stepFollow(-1)) return;
     const nonSection = queue.filter(q => q.type !== 'section');
     if (!currentTimelineId) return;
     const idx = nonSection.findIndex(q => q.id === currentTimelineId);
     if (idx > 0) handleTimelineSendItem(nonSection[idx - 1]);
-  }, [queue, currentTimelineId, handleTimelineSendItem, stepReveal, stepFollow]);
+  }, [queue, currentTimelineId, handleTimelineSendItem, stepReveal, stepFollow, stepSong]);
 
   useEffect(() => { timelineNextRef.current = handleTimelineNext; }, [handleTimelineNext]);
   useEffect(() => { timelinePrevRef.current = handleTimelinePrev; }, [handleTimelinePrev]);
@@ -717,8 +766,10 @@ export default function Index() {
       send({ type: 'show-slide', slide: prepSlide(item.slide) });
       setSelectedSlide(item.slide);
       setSelectedVerse(null);
+    } else if (item.type === 'song' && item.song) {
+      projectSongAt(item.song, 0);
     }
-  }, [send]);
+  }, [send, projectSongAt]);
 
   const handleSendSlide = useCallback((slide: CustomSlide) => {
     send({ type: 'show-slide', slide: prepSlide(slide) });
@@ -737,6 +788,7 @@ export default function Index() {
   const handleSelectQueueItem = useCallback((item: QueueItem) => {
     if (item.type === 'verse' && item.verse) { setSelectedVerse(item.verse); setSelectedVerse2(null); setSelectedSlide(null); }
     else if (item.type === 'slide' && item.slide) { setSelectedSlide(item.slide); setSelectedVerse(null); }
+    else if (item.type === 'song' && item.song) { const sl = songSlides(item.song)[0]; if (sl) { setSelectedSlide(sl); setSelectedVerse(null); } }
   }, []);
   const handleMoveAfter = useCallback((id: string, afterId: string) => setQueue(prev => moveItem(prev, id, afterId)), []);
   const handleToggleCollapse = useCallback((id: string) => setQueue(prev => prev.map(q => q.id === id ? { ...q, collapsed: !q.collapsed } : q)), []);
@@ -948,12 +1000,24 @@ export default function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateVersion, tvList]);
   const nextScene = useMemo(() => {
+    // Pendant un chant : l'écran suivant du chant
+    const sr = songRef.current;
+    if (sr && sr.index < sr.slides.length - 1) {
+      const nx = sr.slides[sr.index + 1];
+      return { content: { id: -2, kind: 'slide' as const, slide: nx }, label: `${nx.title} · ${sr.index + 2}/${sr.slides.length}` };
+    }
     const items = queue.filter(q => q.type !== 'section');
     const idx = currentTimelineId ? items.findIndex(q => q.id === currentTimelineId) : -1;
     const item = items[idx + 1];
-    const label = item ? (item.type === 'verse' && item.verse ? `${item.verse.book} ${item.verse.chapter}:${item.verse.verse}` : item.slide?.title || 'Slide') : undefined;
+    const label = item ? (item.type === 'verse' && item.verse ? `${item.verse.book} ${item.verse.chapter}:${item.verse.verse}` : item.type === 'song' ? `Chant · ${item.song?.title ?? ''}` : item.slide?.title || 'Slide') : undefined;
     return { content: itemToScene(item, idx + 1), label };
-  }, [queue, currentTimelineId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queue, currentTimelineId, stateVersion]);
+
+  // Chant en direct : la tuile correspondante s'allume dans l'onglet Chants
+  const liveCur = currentRef.current;
+  const liveSong = liveCur?.type === 'show-slide' && liveCur.slide?.slideType === 'song' && /-\d+$/.test(liveCur.slide.id)
+    ? { songId: liveCur.slide.id.replace(/-\d+$/, ''), index: Number(liveCur.slide.id.match(/-(\d+)$/)![1]) } : null;
 
   // ── Avant le culte : vérification, alertes pendant le culte, guide ──
   const battery = useBattery();
@@ -1088,9 +1152,12 @@ export default function Index() {
             className="flex flex-col glass-panel overflow-hidden"
           >
             <Tabs defaultValue="bible" className="flex flex-col h-full" data-tour="bibliotheque">
-              <TabsList className="mx-2 mt-2 bg-secondary/80 backdrop-blur-sm shrink-0 grid grid-cols-5 h-auto p-1 gap-0.5">
+              <TabsList className="mx-2 mt-2 bg-secondary/80 backdrop-blur-sm shrink-0 grid grid-cols-6 h-auto p-1 gap-0.5">
                 <TabsTrigger value="bible" className="min-w-0 flex-col gap-0.5 px-0.5 py-1.5 text-[11px] leading-none transition-smooth data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
                   <BookOpen className="h-4 w-4" /> Bible
+                </TabsTrigger>
+                <TabsTrigger value="songs" className="min-w-0 flex-col gap-0.5 px-0.5 py-1.5 text-[11px] leading-none transition-smooth data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
+                  <Music2 className="h-4 w-4" /> Chants
                 </TabsTrigger>
                 <TabsTrigger value="slides" className="min-w-0 flex-col gap-0.5 px-0.5 py-1.5 text-[11px] leading-none transition-smooth data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
                   <Layout className="h-4 w-4" /> Slides
@@ -1136,6 +1203,11 @@ export default function Index() {
                   onVoice={localServer.isNative ? localServer.listen : undefined}
                 />
                 </div>
+              </TabsContent>
+
+              <TabsContent value="songs" forceMount className="flex-1 mt-0 overflow-hidden data-[state=inactive]:hidden">
+                <SongsPanel onPreview={handleSelectSlide} onProject={handleProjectSong} onAddToDeroule={handleAddSongToDeroule}
+                  live={liveSong} theme={theme} settings={settings} onSongWave={on => handleWaveSettings({ songWave: on })} />
               </TabsContent>
 
               <TabsContent value="slides" forceMount className="flex-1 mt-0 overflow-hidden data-[state=inactive]:hidden">

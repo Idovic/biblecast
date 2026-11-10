@@ -383,6 +383,21 @@ function SlideBlock({ slide, theme, settings }: { slide: CustomSlide; theme: Dis
       </FitText>
     </div>;
   }
+  if (type === 'song') {
+    // Chant : seulement les paroles, en grand ; le titre (1er écran) ou « Refrain » en petit au-dessus
+    const lines = (slide.content ?? '').split('\n').filter(l => l.trim());
+    const tag = label ? <p style={{ fontFamily: SANS_STACK, color: ACCENT, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', fontSize: 1.6 * u, textShadow: shadow, textAlign: 'center', width: '100%', animation: 'bc-fade-in 500ms ease-out both' }}>{label}</p> : undefined;
+    const by = footer ? <p style={{ fontFamily: SANS_STACK, color: fgDim, fontSize: 1.6 * u, fontWeight: 600, textShadow: shadow, textAlign: 'center', width: '100%' }}>{footer}</p> : undefined;
+    return (
+      <div className="h-full w-full flex flex-col">
+        <FitText maxU={(SLIDE_TEXT[size] ?? 3.6) * 1.75} minU={1.6} align="center" header={tag} footer={by} gapU={2.2}
+          fitKey={slide.id + content + label + footer}
+          style={{ fontFamily: font, color: fg, fontWeight: 600, lineHeight: 1.32, textShadow: shadow, animation: 'bc-fade-in 450ms ease-out both' }}>
+          {lines.map((l, i) => <p key={i}>{nbsp(l)}</p>)}
+        </FitText>
+      </div>
+    );
+  }
   if (type === 'verse-title') {
     // Verset : la référence en étiquette, le texte entre guillemets (jamais doublés)
     const text = stripQuotes(content);

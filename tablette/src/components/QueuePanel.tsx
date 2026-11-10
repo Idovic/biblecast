@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import type { BibleData, DisplayTheme, QueueItem } from '@/types/bible';
+import { songSlides, firstLine, type Song } from '@/lib/songs';
 import type { ChurchSettings } from '@/components/SettingsPanel';
 import { formatReference } from '@/lib/bible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,6 +53,7 @@ function getItemLabel(item: QueueItem): string {
   if (item.type === 'verse' && item.verse) return formatReference(item.verse);
   if (item.type === 'slide' && item.slide) return item.slide.title || 'Slide sans titre';
   if (item.type === 'section') return item.sectionName || 'Moment';
+  if (item.type === 'song' && item.song) return item.song.title;
   return '—';
 }
 function getItemPreview(item: QueueItem): string {
@@ -60,11 +62,13 @@ function getItemPreview(item: QueueItem): string {
     if (item.slide.slideType === 'bullet-list') return (item.slide.bullets || []).filter(Boolean).join(' · ');
     return item.slide.content || '';
   }
+  if (item.type === 'song' && item.song) return [item.song.author, firstLine(item.song as Song)].filter(Boolean).join(' · ');
   return '';
 }
 function itemScene(item: QueueItem): SceneContentData {
   if (item.type === 'verse' && item.verse) return { id: 0, kind: 'verse', verse: item.verse };
   if (item.type === 'slide' && item.slide) return { id: 0, kind: 'slide', slide: { ...item.slide, revealed: undefined } };
+  if (item.type === 'song' && item.song) { const sl = songSlides(item.song as Song)[0]; if (sl) return { id: 0, kind: 'slide', slide: sl }; }
   return { id: 0, kind: 'empty' };
 }
 
@@ -118,7 +122,7 @@ function ItemRow({ item, isCurrent, isNext, inSection, moving, moveSource, theme
       <Thumb item={item} theme={theme} settings={settings} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className={cn('text-[10px] font-semibold', item.type === 'verse' ? 'text-primary' : 'text-sky-300')}>{item.type === 'verse' ? 'Verset' : item.slide?.slideType === 'definition' ? 'Dictionnaire' : 'Slide'}</span>
+          <span className={cn('text-[10px] font-semibold', item.type === 'verse' ? 'text-primary' : item.type === 'song' ? 'text-violet-300' : 'text-sky-300')}>{item.type === 'verse' ? 'Verset' : item.type === 'song' ? 'Chant' : item.slide?.slideType === 'definition' ? 'Dictionnaire' : 'Slide'}</span>
           {isCurrent && <span className="text-[10px] font-bold text-primary">▶ EN COURS</span>}
           {isNext && !isCurrent && <span className="text-[10px] font-semibold text-sky-400">SUIVANT</span>}
           {(item.wave || sectionWave) && <AudioLines className="h-3 w-3 text-sky-300 ml-auto shrink-0" aria-label="avec onde" />}
@@ -324,7 +328,7 @@ export default function QueuePanel(p: QueuePanelProps) {
             {history.map(item => (
               <button key={item.id} onClick={() => p.onResend(item)}
                 className="w-full text-left p-3 bg-secondary/60 hover:bg-surface-hover rounded-lg border border-transparent hover:border-primary/15 transition-smooth">
-                <span className={cn('text-[10px] font-medium', item.type === 'verse' ? 'text-primary' : 'text-sky-300')}>{item.type === 'verse' ? 'Verset' : 'Slide'}</span>
+                <span className={cn('text-[10px] font-medium', item.type === 'verse' ? 'text-primary' : item.type === 'song' ? 'text-violet-300' : 'text-sky-300')}>{item.type === 'verse' ? 'Verset' : item.type === 'song' ? 'Chant' : 'Slide'}</span>
                 <p className="text-primary font-semibold text-sm">{getItemLabel(item)}</p>
                 <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{getItemPreview(item)}</p>
               </button>
