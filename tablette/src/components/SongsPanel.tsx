@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import type { CustomSlide, DisplayTheme } from '@/types/bible';
 import type { ChurchSettings } from '@/components/SettingsPanel';
 import SongEditor from '@/components/SongEditor';
-import { loadSongs, saveSong, deleteSong, saveSongs, searchSongs, songScreens, songSlides, firstLine, exportSongsJson, parseSongsFile, newSong, type Song } from '@/lib/songs';
+import { loadSongs, saveSong, deleteSong, saveSongs, searchSongs, songScreens, songSlides, firstLine, exportSongsJson, parseSongsFile, newSong, addStarterSongs, starterSongsAdded, type Song } from '@/lib/songs';
 
 export default function SongsPanel({ onPreview, onProject, onAddToDeroule, live, theme, settings, onSongWave }: {
   onPreview: (slide: CustomSlide) => void;
@@ -29,8 +29,12 @@ export default function SongsPanel({ onPreview, onProject, onAddToDeroule, live,
   const fileRef = useRef<HTMLInputElement>(null);
   const lastTap = useRef<{ i: number; t: number } | null>(null);
 
-  const refresh = () => loadSongs().then(s => { setSongs(s); setLoaded(true); });
-  useEffect(() => { refresh(); }, []);
+  const refresh = () => loadSongs().then(s => { setSongs(s); setLoaded(true); return s; });
+  useEffect(() => {
+    // Premier lancement : les cantiques de départ (domaine public) sont ajoutés une seule fois
+    refresh().then(s => { if (!starterSongsAdded()) addStarterSongs(s).then(n => { if (n) refresh(); }); });
+  }, []);
+  const addStarter = async () => { const n = await addStarterSongs(songs); refresh(); flash(n ? `${n} cantiques ajoutés.` : 'Les cantiques de départ sont déjà là.'); };
   const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 3500); };
 
   const list = useMemo(() => searchSongs(songs, q), [songs, q]);
@@ -112,6 +116,7 @@ export default function SongsPanel({ onPreview, onProject, onAddToDeroule, live,
                 <Music2 className="h-10 w-10 mx-auto text-muted-foreground/30" />
                 <p className="text-sm text-muted-foreground">Aucun chant pour l'instant.</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">« Nouveau chant », puis collez les paroles : une ligne vide entre les strophes, et « Refrain » au-dessus du refrain. Ou importez un fichier de chants partagé par une autre église.</p>
+                <Button variant="secondary" className="h-11 gap-1.5" onClick={addStarter}><Music2 className="h-4 w-4" /> Ajouter les cantiques de départ</Button>
               </div>
             )}
             {list.map(s => (

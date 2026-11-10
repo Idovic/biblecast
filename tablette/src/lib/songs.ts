@@ -193,6 +193,24 @@ export function parseSongsFile(text: string, existing: Song[]): Song[] {
   }).filter((s): s is Song => !!s);
 }
 
+/* ── Cantiques de départ (domaine public, textes publiés avant 1929) ── */
+const SEEDED_KEY = 'biblecast:cantiques-ajoutes';
+export async function addStarterSongs(existing: Song[]): Promise<number> {
+  try {
+    const txt = await fetch(import.meta.env.BASE_URL + 'cantiques.txt').then(r => (r.ok ? r.text() : ''));
+    if (!txt) return 0;
+    const titles = new Set(existing.map(s => norm(s.title)));
+    // Un cantique déjà présent (même titre) n'est pas remplacé
+    const list = parseSongsFile(txt, []).filter(s => !titles.has(norm(s.title)));
+    const n = list.length ? await saveSongs(list) : 0;
+    try { localStorage.setItem(SEEDED_KEY, '1'); } catch { /* ignore */ }
+    return n;
+  } catch { return 0; }
+}
+export function starterSongsAdded(): boolean {
+  try { return !!localStorage.getItem(SEEDED_KEY); } catch { return true; }
+}
+
 export function newSong(): Song {
   return { id: genId(), title: '', lyrics: '', linesPerScreen: 4, background: DEFAULT_SONG_BG, updatedAt: Date.now() };
 }
