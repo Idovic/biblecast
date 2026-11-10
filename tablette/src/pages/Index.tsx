@@ -1,6 +1,8 @@
 /* Page principale — Mode Présentateur */
 import { useState, useEffect, useCallback, useRef, useMemo, useReducer } from 'react';
-import { Monitor, BookOpen, Image, Layout, Settings, MonitorOff, Film, Presentation, Mic, Square, Layers, Clock } from 'lucide-react';
+import { Monitor, BookOpen, Image, Layout, Settings, MonitorOff, Film, Presentation, Mic, Square, Layers, Clock, ClipboardCheck, GraduationCap } from 'lucide-react';
+import PreflightPanel, { useBattery, runChecks, worstStatus } from '@/components/PreflightPanel';
+import GuideTour, { GUIDE_DONE_KEY } from '@/components/GuideTour';
 import { Capacitor } from '@capacitor/core';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { Button } from '@/components/ui/button';
@@ -20,8 +22,8 @@ import { useLocalServer } from '@/hooks/useLocalServer';
 import { loadBible, loadBDS, stepVerse, passagePages, getParallelVerse, formatReference, getVerse, parseReference } from '@/lib/bible';
 import { cn, genId } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import type { BibleData, VerseReference, CustomSlide, QueueItem, DisplayTheme, DisplayMessage, PresentationMeta, TvVideoStatus, TvRole, TvDiag } from '@/types/bible';
-import type { SceneContentData, StageOverlay } from '@/components/scene/Scene';
+import type { BibleData, VerseReference, CustomSlide, QueueItem, DisplayTheme, DisplayMessage, PresentationMeta, TvVideoStatus, TvRole, TvDiag, Nameplate } from '@/types/bible';
+import { revealTotal, type SceneContentData, type StageOverlay } from '@/components/scene/Scene';
 import { archiveProjection } from '@/components/HistoryArchive';
 import { applyFontVars } from '@/lib/fonts';
 import SlideEditPanel from '@/components/SlideEditPanel';
@@ -49,7 +51,7 @@ function itemToScene(item: QueueItem | undefined, id: number): SceneContentData 
 }
 const CONTENT_TYPES: DisplayMessage['type'][] = ['show-verse', 'show-dual-verse', 'show-slide', 'clear'];
 /** Liste point par point : la slide part avec 0 point visible, chaque « Suivant » en ajoute un */
-const prepSlide = (s: CustomSlide): CustomSlide => (s.revealBullets && s.slideType === 'bullet-list' ? { ...s, revealed: 0 } : s);
+const prepSlide = (s: CustomSlide): CustomSlide => (s.revealBullets && revealTotal(s) > 0 ? { ...s, revealed: 0 } : s);
 
 function ColResizeHandle() {
   const [dragging, setDragging] = useState(false);
@@ -166,7 +168,11 @@ export default function Index() {
     }
   }, []);
   const localServer = useLocalServer(handleTvMessage);
-  const rawSend = useBroadcastSender(undefined, localServer.sendToWs);
+  const netSend = useBroadcastSender(undefined, localServer.sendToWs);
+  // Mode entraînement : tout marche sur la tablette, rien ne part vers les TV
+  const [training, setTraining] = useState(false);
+  const trainingRef = useRef(false);
+  const rawSend = useCallback((m: DisplayMessage) => { if (!trainingRef.current) netSend(m); }, [netSend]);
 
   // ── Mode de la régie, NOIR / LOGO / FOND SEUL, rôle de chaque TV ──
   const [uiMode, setUiMode] = useState<'preparer' | 'direct'>(() => {
@@ -196,6 +202,10 @@ export default function Index() {
   const tickerRef = useRef('');
   // Onde décorative : allumée à la main (reste) ou par un élément du déroulé (s'éteint après)
   const [waveOn, setWaveOn] = useState(false);
+  // Bandeau nom (orateur, invité, chorale…) ; peut se masquer tout seul après quelques secondes
+  const [nameplate, setNameplate] = useState<Nameplate | null>(null);
+  const nameplateRef = useRef<Nameplate | null>(null);
+  const nameplateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const waveRef = useRef(false);
   const waveAutoRef = useRef(false);
   const waveIntentRef = useRef<boolean | null>(null);
@@ -366,6 +376,7 @@ export default function Index() {
   }, [queue, rawSend]);
 
   useEffect(() => {
+    if (trainingRef.current) return;
     localServer.setState({
       type: 'state',
       protocol: 2,
@@ -377,12 +388,13 @@ export default function Index() {
       current: currentRef.current,
       tickerText: tickerRef.current,
       wave: waveRef.current,
+      nameplate: nameplateRef.current,
       currentByTv: currentByTvRef.current,
       overlayByTv: overlayByTvRef.current,
       tickerByTv: tickerByTvRef.current,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stateVersion, theme, settingsJson, roles, localServer.isServerRunning, localServer.setState]);
+  }, [stateVersion, theme, settingsJson, roles, localServer.isServerRunning, localServer.setState, training]);
 
   // Sync horloge TV — envoie le timestamp de la tablette toutes les 5 secondes
   useEffect(() => {
@@ -584,6 +596,17 @@ export default function Index() {
     bumpState();
   }, [rawSend]);
 
+  const handleNameplate = useCallback((np: Nameplate | null, autoHideSec = 0) => {
+    if (nameplateTimer.current) { clearTimeout(nameplateTimer.current); nameplateTimer.current = null; }
+    const v = np && np.name.trim() ? { name: np.name.trim(), role: np.role?.trim() || undefined } : null;
+    nameplateRef.current = v; setNameplate(v);
+    rawSend({ type: 'nameplate', nameplate: v });
+    bumpState();
+    if (v && autoHideSec > 0) nameplateTimer.current = setTimeout(() => {
+      nameplateRef.current = null; setNameplate(null); rawSend({ type: 'nameplate', nameplate: null }); bumpState();
+    }, autoHideSec * 1000);
+  }, [rawSend]);
+
   const handleWaveSettings = useCallback((patch: Partial<ChurchSettings>) => {
     const next = { ...loadSettings(), ...patch };
     saveSettings(next); setSettings(next);
@@ -615,7 +638,7 @@ export default function Index() {
   const stepReveal = useCallback((dir: 1 | -1): boolean => {
     const cur = currentRef.current;
     if (targetTvRef.current || cur?.type !== 'show-slide' || !cur.slide?.revealBullets) return false;
-    const total = (cur.slide.bullets ?? []).filter(Boolean).length;
+    const total = revealTotal(cur.slide);
     const next = (cur.slide.revealed ?? total) + dir;
     if (next < 0 || next > total) return false;
     send({ type: 'show-slide', slide: { ...cur.slide, revealed: next } });
@@ -932,11 +955,71 @@ export default function Index() {
     return { content: itemToScene(item, idx + 1), label };
   }, [queue, currentTimelineId]);
 
+  // ── Avant le culte : vérification, alertes pendant le culte, guide ──
+  const battery = useBattery();
+  const [showPreflight, setShowPreflight] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  useEffect(() => {
+    if (bibleLoading) return;
+    try { if (!localStorage.getItem(GUIDE_DONE_KEY)) setShowGuide(true); } catch { /* ignore */ }
+  }, [bibleLoading]);
+  const preflightInput = {
+    tvs: tvList, isNative: localServer.isNative, serverRunning: localServer.isServerRunning,
+    queue, tvCache, battery, keepScreenOn: !!settings.keepScreenOn,
+  };
+  const preflightStatus = worstStatus(runChecks(preflightInput));
+  // Entrer / sortir du mode entraînement : à la sortie, la tablette retrouve ce que montrent vraiment les TV
+  const trainingSnap = useRef<{ current: DisplayMessage | null; overlay: StageOverlay; ticker: string; wave: boolean; nameplate: Nameplate | null } | null>(null);
+  const handleTraining = useCallback((on: boolean) => {
+    if (on) {
+      trainingSnap.current = { current: currentRef.current, overlay: overlayRef.current, ticker: tickerRef.current, wave: waveRef.current, nameplate: nameplateRef.current };
+      trainingRef.current = true; setTraining(true);
+    } else {
+      const s = trainingSnap.current;
+      if (s) {
+        currentRef.current = s.current; overlayRef.current = s.overlay; setOverlayState(s.overlay);
+        tickerRef.current = s.ticker; setTickerText(s.ticker); waveRef.current = s.wave; setWaveOn(s.wave);
+        nameplateRef.current = s.nameplate; setNameplate(s.nameplate);
+      }
+      trainingRef.current = false; setTraining(false); bumpState();
+    }
+  }, []);
+  // Alertes discrètes : TV déconnectée, batterie faible
+  const prevTvs = useRef<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    const gone = prevTvs.current.filter(t => !tvList.some(x => x.id === t.id));
+    if (gone.length && !training) toast({ title: `TV déconnectée : ${gone.map(t => t.name).join(', ')}`, description: 'Elle se reconnecte toute seule dès qu\'elle retrouve le Wi-Fi.', variant: 'destructive', duration: 6000 });
+    prevTvs.current = tvList;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tvList]);
+  const lowWarned = useRef(false);
+  useEffect(() => {
+    if (!battery) return;
+    if (!battery.charging && battery.level < 0.2 && !lowWarned.current) {
+      lowWarned.current = true;
+      toast({ title: `Batterie de la tablette : ${Math.round(battery.level * 100)} %`, description: 'Branchez la tablette pour ne pas couper la projection.', variant: 'destructive', duration: 8000 });
+    }
+    if (battery.charging || battery.level >= 0.3) lowWarned.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [battery]);
+
   return (
     <>
       <SplashScreen loading={bibleLoading} />
+      {showGuide && <GuideTour onClose={() => setShowGuide(false)} />}
+      {showPreflight && (
+        <PreflightPanel input={preflightInput} onClose={() => setShowPreflight(false)}
+          onKeepScreenOn={v => { const next = { ...loadSettings(), keepScreenOn: v }; saveSettings(next); setSettings(next); }}
+          training={training} onTraining={handleTraining} onGuide={() => { setShowPreflight(false); setShowGuide(true); }} />
+      )}
 
       <div className="h-screen flex flex-col overflow-hidden">
+        {training && (
+          <div className="shrink-0 flex items-center justify-center gap-3 bg-amber-500 text-black text-sm font-semibold py-1.5 px-4">
+            <GraduationCap className="h-4 w-4" /> Mode entraînement : rien n'est envoyé aux TV
+            <button onClick={() => handleTraining(false)} className="h-8 px-3 rounded-lg bg-black/15 hover:bg-black/25 font-bold">Quitter</button>
+          </div>
+        )}
         <header className="h-14 flex items-center px-4 border-b border-border shrink-0 glass-panel">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -963,9 +1046,9 @@ export default function Index() {
               <Mic className={cn('h-4 w-4', sermon.active && 'animate-pulse')} />
               <span className="text-sm">{sermon.active ? 'Écoute' : 'Écouter'}</span>
             </Button>
-            <CastButton localServer={localServer} roles={roles} onRoleChange={handleRoleChange} tvNames={tvNames} onRename={handleRenameTv} tvDiag={tvDiag} />
+            <span data-tour="tv"><CastButton localServer={localServer} roles={roles} onRoleChange={handleRoleChange} tvNames={tvNames} onRename={handleRenameTv} tvDiag={tvDiag} /></span>
             {/* Commandes de direct : agissent tout de suite sur les TV */}
-            <div className="flex items-center gap-1 ml-1 pl-2 border-l border-border/60" role="group" aria-label="Commandes de direct">
+            <div data-tour="commandes" className="flex items-center gap-1 ml-1 pl-2 border-l border-border/60" role="group" aria-label="Commandes de direct">
               {([['black', 'NOIR', Square], ['logo', 'LOGO', Image], ['background', 'FOND SEUL', Layers]] as const).map(([o, label, Icon]) => (
                 <button key={o} onClick={() => handleOverlay(overlay === o ? 'none' : o)} aria-pressed={overlay === o}
                   className={cn('h-10 px-3 rounded-lg border text-[13px] font-bold tracking-wide flex items-center gap-1.5 transition-colors',
@@ -978,6 +1061,12 @@ export default function Index() {
                 <Clock className="h-4 w-4" />Attente
               </button>
             </div>
+            <button data-tour="verifier" onClick={() => setShowPreflight(true)} title="Avant le culte : vérification" aria-label="Vérification avant le culte"
+              className="relative h-10 w-10 ml-1 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary">
+              <ClipboardCheck className="h-5 w-5" />
+              <span className={cn('absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full ring-2 ring-background',
+                preflightStatus === 'ok' ? 'bg-emerald-400' : preflightStatus === 'warn' ? 'bg-amber-400' : 'bg-red-500')} />
+            </button>
             <Button
               size="sm" variant="ghost"
               className="h-10 w-10 p-0 text-muted-foreground hover:text-foreground transition-smooth"
@@ -998,7 +1087,7 @@ export default function Index() {
             maxSize={45}
             className="flex flex-col glass-panel overflow-hidden"
           >
-            <Tabs defaultValue="bible" className="flex flex-col h-full">
+            <Tabs defaultValue="bible" className="flex flex-col h-full" data-tour="bibliotheque">
               <TabsList className="mx-2 mt-2 bg-secondary/80 backdrop-blur-sm shrink-0 grid grid-cols-5 h-auto p-1 gap-0.5">
                 <TabsTrigger value="bible" className="min-w-0 flex-col gap-0.5 px-0.5 py-1.5 text-[11px] leading-none transition-smooth data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
                   <BookOpen className="h-4 w-4" /> Bible
@@ -1156,6 +1245,8 @@ export default function Index() {
               waveOn={waveOn}
               onWave={handleWave}
               onWaveSettings={handleWaveSettings}
+              nameplate={nameplate}
+              onNameplate={handleNameplate}
               liveVerse={(currentRef.current?.type === 'show-verse' || currentRef.current?.type === 'show-dual-verse') ? currentRef.current.verse ?? null : null}
               onToggleWord={handleToggleWord}
               tvs={tvList}
@@ -1175,6 +1266,7 @@ export default function Index() {
             maxSize={40}
             className="flex flex-col glass-panel overflow-hidden"
           >
+            <div data-tour="deroule" className="flex flex-col h-full min-h-0">
             <QueuePanel
               queue={queue}
               history={history}
@@ -1203,6 +1295,7 @@ export default function Index() {
               theme={theme}
               settings={settings}
             />
+            </div>
           </Panel>
 
         </PanelGroup>
@@ -1211,6 +1304,7 @@ export default function Index() {
           <SettingsPanel
             onClose={() => setShowSettings(false)}
             onBible2Imported={handleBible2Imported}
+            theme={theme}
           />
         )}
       </div>

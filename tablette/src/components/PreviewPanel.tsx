@@ -2,12 +2,12 @@
    Mode Préparer : un grand aperçu de la sélection.
    Mode Direct : EN DIRECT (ce que montrent les TV) + SUIVANT, et la barre de direct. */
 import { useState } from 'react';
-import { Send, Plus, ChevronLeft, ChevronRight, Image as ImageIcon, Megaphone, MegaphoneOff, AudioLines } from 'lucide-react';
+import { Send, Plus, ChevronLeft, ChevronRight, Image as ImageIcon, Megaphone, MegaphoneOff, AudioLines, IdCard, EyeOff, X } from 'lucide-react';
 import { WAVE_STYLES, WAVE_POSITIONS, WAVE_COLORS } from '@/components/scene/wave';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { DisplayTheme, VerseReference } from '@/types/bible';
+import type { DisplayTheme, VerseReference, Nameplate } from '@/types/bible';
 import type { ChurchSettings } from '@/components/SettingsPanel';
 import { SceneView, type SceneContentData, type StageOverlay, type StandbyExtras } from '@/components/scene/Scene';
 import { useStandbyExtras } from '@/components/scene/standby';
@@ -37,6 +37,9 @@ interface PreviewPanelProps {
   waveOn: boolean;
   onWave: (on: boolean) => void;
   onWaveSettings: (patch: Partial<ChurchSettings>) => void;
+  /** Bandeau avec un nom (null = masqué) ; autoHideSec > 0 : se masque tout seul */
+  nameplate: Nameplate | null;
+  onNameplate: (np: Nameplate | null, autoHideSec?: number) => void;
   /** Verset en direct : ses mots peuvent être mis en valeur */
   liveVerse: VerseReference | null;
   onToggleWord: (index: number) => void;
@@ -101,13 +104,15 @@ export default function PreviewPanel(p: PreviewPanelProps) {
   const words = p.liveVerse ? p.liveVerse.text.split(/\s+/).filter(Boolean) : [];
   const lit = new Set(p.liveVerse?.highlights ?? []);
   const [showWave, setShowWave] = useState(false);
+  const [showName, setShowName] = useState(false);
+  const panel = (which: 'ticker' | 'wave' | 'name') => { setShowTicker(v => which === 'ticker' ? !v : false); setShowWave(v => which === 'wave' ? !v : false); setShowName(v => which === 'name' ? !v : false); };
   const chip = (on: boolean) => cn('h-9 px-3 rounded-lg border text-xs font-semibold', on ? 'bg-sky-400 text-black border-sky-300' : 'bg-secondary/60 border-border/50 text-muted-foreground');
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 min-h-0 overflow-y-auto p-4">
         {mode === 'direct' ? (
-          <div className="max-w-3xl mx-auto flex flex-col gap-3">
+          <div className="max-w-3xl mx-auto flex flex-col gap-3" data-tour="apercu">
             <Screen label={p.perTv ? 'En direct · toutes les TV' : 'En direct'} tone="live" content={p.live} theme={theme} settings={settings} overlay={overlay} extras={extras} wave={p.waveOn} />
             {p.perTv && <PerTvRow perTv={p.perTv} theme={theme} settings={settings} extras={extras} />}
             <div className="w-1/2 min-w-[220px] self-center">
@@ -116,7 +121,7 @@ export default function PreviewPanel(p: PreviewPanelProps) {
             </div>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-3xl mx-auto" data-tour="apercu">
             <Screen label={p.hasSelection ? 'Aperçu de la sélection' : 'En direct sur les TV'} tone={p.hasSelection ? 'preview' : 'live'}
               content={p.selected ?? p.live} theme={theme} settings={settings} overlay={p.hasSelection ? undefined : overlay} extras={extras} wave={p.waveOn} />
             {!p.hasSelection && p.perTv && <PerTvRow perTv={p.perTv} theme={theme} settings={settings} extras={extras} />}
@@ -202,6 +207,8 @@ export default function PreviewPanel(p: PreviewPanelProps) {
             </div>
           </div>
         )}
+        {/* Bandeau avec un nom */}
+        {showName && <NamePanel nameplate={p.nameplate} onNameplate={p.onNameplate} />}
         {/* Annonce défilante (action en direct) */}
         {showTicker && (
           <div className="flex gap-2 items-center rounded-xl bg-amber-500/10 border border-amber-500/30 p-2">
@@ -234,13 +241,17 @@ export default function PreviewPanel(p: PreviewPanelProps) {
           </div>
         )}
         {/* Barre de direct : toujours visible */}
-        <div className="flex gap-2">
+        <div className="flex gap-2" data-tour="direct">
           <button onClick={p.onPrev} className="h-12 w-20 rounded-xl bg-secondary/70 border border-border/50 flex items-center justify-center" aria-label="Précédent"><ChevronLeft className="h-6 w-6" /></button>
-          <button onClick={() => { setShowTicker(v => !v); setShowWave(false); }} aria-label="Annonce défilante" title="Annonce défilante en bas des TV"
+          <button onClick={() => panel('ticker')} aria-label="Annonce défilante" title="Annonce défilante en bas des TV"
             className={cn('flex-1 h-12 rounded-xl border text-sm font-semibold flex items-center justify-center gap-1.5', tickerOn ? 'bg-amber-500 text-black border-amber-400' : showTicker ? 'bg-secondary border-amber-500/50 text-amber-300' : 'bg-secondary/70 border-border/50 text-foreground')}>
             <Megaphone className="h-4 w-4" />Bandeau
           </button>
-          <button onClick={() => { setShowWave(v => !v); setShowTicker(false); }} aria-label="Onde sonore" title="Onde animée sur les TV (louange, chorale)"
+          <button onClick={() => panel('name')} aria-label="Bandeau nom" title="Nom d'un orateur ou d'un invité, en bas des TV"
+            className={cn('flex-1 h-12 rounded-xl border text-sm font-semibold flex items-center justify-center gap-1.5', p.nameplate ? 'bg-violet-400 text-black border-violet-300' : showName ? 'bg-secondary border-violet-400/50 text-violet-300' : 'bg-secondary/70 border-border/50 text-foreground')}>
+            <IdCard className="h-4 w-4" />Nom
+          </button>
+          <button onClick={() => panel('wave')} aria-label="Onde sonore" title="Onde animée sur les TV (louange, chorale)"
             className={cn('flex-1 h-12 rounded-xl border text-sm font-semibold flex items-center justify-center gap-1.5', p.waveOn ? 'bg-sky-400 text-black border-sky-300' : showWave ? 'bg-secondary border-sky-400/50 text-sky-300' : 'bg-secondary/70 border-border/50 text-foreground')}>
             <AudioLines className="h-4 w-4" />Onde
           </button>
@@ -250,6 +261,63 @@ export default function PreviewPanel(p: PreviewPanelProps) {
           <Button onClick={p.onSendToDisplay} className="w-full h-11 btn-gold rounded-xl gap-2"><Send className="h-4 w-4" /> Projeter la sélection</Button>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ── Bandeau nom : noms récents gardés sur la tablette pour aller vite ── */
+const RECENT_KEY = 'biblecast:nameplates';
+function loadRecent(): Nameplate[] {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch { return []; }
+}
+function saveRecent(list: Nameplate[]) {
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 8))); } catch { /* ignore */ }
+}
+const AUTO_HIDE = [[0, 'Reste affiché'], [10, '10 s'], [20, '20 s']] as const;
+
+function NamePanel({ nameplate, onNameplate }: { nameplate: Nameplate | null; onNameplate: (np: Nameplate | null, autoHideSec?: number) => void }) {
+  const [name, setName] = useState(nameplate?.name ?? '');
+  const [role, setRole] = useState(nameplate?.role ?? '');
+  const [auto, setAuto] = useState<number>(() => { try { return Number(localStorage.getItem('biblecast:nameplate-auto') ?? 0); } catch { return 0; } });
+  const [recent, setRecent] = useState<Nameplate[]>(loadRecent);
+  const show = (np: Nameplate) => {
+    if (!np.name.trim()) return;
+    onNameplate(np, auto);
+    const next = [np, ...recent.filter(r => r.name !== np.name || (r.role ?? '') !== (np.role ?? ''))];
+    setRecent(next.slice(0, 8)); saveRecent(next);
+  };
+  const remove = (np: Nameplate) => { const next = recent.filter(r => r !== np); setRecent(next); saveRecent(next); };
+  const chip = (on: boolean) => cn('h-9 px-3 rounded-lg border text-xs font-semibold', on ? 'bg-violet-400 text-black border-violet-300' : 'bg-secondary/60 border-border/50 text-muted-foreground');
+  return (
+    <div className="rounded-xl bg-violet-500/10 border border-violet-400/30 p-2 space-y-2">
+      <div className="flex gap-2">
+        <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom (ex. Pasteur Daniel Camara)" className="h-11 bg-secondary flex-[3]"
+          onKeyDown={e => e.key === 'Enter' && show({ name, role })} />
+        <Input value={role} onChange={e => setRole(e.target.value)} placeholder="Rôle (ex. Prédication)" className="h-11 bg-secondary flex-[2]"
+          onKeyDown={e => e.key === 'Enter' && show({ name, role })} />
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Button onClick={() => show({ name, role })} disabled={!name.trim()} className="h-10 gap-1.5 bg-violet-400 hover:bg-violet-300 text-black">
+          <IdCard className="h-4 w-4" /> {nameplate ? 'Changer' : 'Afficher'}
+        </Button>
+        {nameplate && <Button variant="secondary" onClick={() => onNameplate(null)} className="h-10 gap-1.5"><EyeOff className="h-4 w-4" /> Masquer</Button>}
+        <span className="w-px h-6 bg-border mx-1" />
+        {AUTO_HIDE.map(([s, label]) => (
+          <button key={s} className={chip(auto === s)} onClick={() => { setAuto(s); try { localStorage.setItem('biblecast:nameplate-auto', String(s)); } catch { /* ignore */ } }}>{label}</button>
+        ))}
+      </div>
+      {recent.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {recent.map((r, i) => (
+            <span key={i} className={cn('inline-flex items-center rounded-lg border text-xs', nameplate?.name === r.name && (nameplate?.role ?? '') === (r.role ?? '') ? 'border-violet-300 bg-violet-400/20' : 'border-border/50 bg-secondary/50')}>
+              <button className="h-9 pl-3 pr-2 text-left" onClick={() => { setName(r.name); setRole(r.role ?? ''); show(r); }}>
+                <b className="font-semibold">{r.name}</b>{r.role && <span className="text-muted-foreground"> · {r.role}</span>}
+              </button>
+              <button className="h-9 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground" aria-label={`Oublier ${r.name}`} onClick={() => remove(r)}><X className="h-3.5 w-3.5" /></button>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -27,11 +27,22 @@ export interface StandbyExtras {
 }
 export type StageOverlay = 'none' | 'black' | 'logo' | 'background';
 
+/** Voile sombre : true = voile des fonds animés ; un nombre = intensité réglable (0 à 80 %) pour les photos et vidéos */
+export type Veil = boolean | number;
 export type SceneBg =
-  | { key: string; kind: 'image'; url: string; fit: 'cover' | 'contain'; kenBurns: boolean; veil: boolean; blur: boolean }
-  | { key: string; kind: 'video'; url: string; veil: boolean }
-  | { key: string; kind: 'animated'; id: string; colors?: string[]; veil: boolean }
-  | { key: string; kind: 'css'; css: string; veil: boolean };
+  | { key: string; kind: 'image'; url: string; fit: 'cover' | 'contain'; kenBurns: boolean; veil: Veil; blur: boolean }
+  | { key: string; kind: 'video'; url: string; veil: Veil }
+  | { key: string; kind: 'animated'; id: string; colors?: string[]; veil: Veil }
+  | { key: string; kind: 'css'; css: string; veil: Veil };
+
+/** Voile par défaut des photos (plus léger qu'avant : 35 %) */
+export const DEFAULT_PHOTO_VEIL = 35;
+function veilCss(v: Veil): string | null {
+  if (v === false || v === 0) return null;
+  if (v === true) return 'radial-gradient(ellipse at center, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.55) 100%)';
+  const k = Math.max(0, Math.min(80, v)) / 100;
+  return `radial-gradient(ellipse at center, rgba(0,0,0,${(k * 0.6).toFixed(3)}) 0%, rgba(0,0,0,${Math.min(0.92, k * 1.15).toFixed(3)}) 100%)`;
+}
 
 const DEFAULT_STANDBY = 'linear-gradient(135deg, #1e1b4b 0%, #1c2f6b 40%, #0d1b2a 100%)';
 const THEME_BG = 'hsl(var(--display-bg))';
@@ -50,25 +61,27 @@ const SLIDE_TITLE: Record<string, number> = { small: 3.0, medium: 3.6, large: 4.
 export function resolveBackground(c: SceneContentData, theme: DisplayTheme, settings: ChurchSettings): SceneBg {
   const kb = settings.kenBurns !== false;
   const blur = !!settings.displayBgBlur;
+  const photoVeil = typeof settings.photoVeil === 'number' ? settings.photoVeil : DEFAULT_PHOTO_VEIL;
   if (c.kind === 'slide' && c.slide) {
     const s = c.slide;
+    const sv = typeof s.veil === 'number' ? s.veil : photoVeil;
     if (s.slideType === 'image-full' && s.backgroundImage) {
       return { key: 'img-full:' + s.backgroundImage.slice(-64) + s.backgroundImage.length, kind: 'image', url: s.backgroundImage, fit: 'contain', kenBurns: false, veil: false, blur: false };
     }
-    if (s.backgroundVideo) return { key: 'vid:' + s.backgroundVideo, kind: 'video', url: s.backgroundVideo, veil: true };
+    if (s.backgroundVideo) return { key: 'vid:' + s.backgroundVideo + ':' + sv, kind: 'video', url: s.backgroundVideo, veil: sv };
     if (s.backgroundAnimated) return { key: 'anim:' + s.backgroundAnimated + (s.backgroundColors ?? []).join(''), kind: 'animated', id: s.backgroundAnimated, colors: s.backgroundColors, veil: true };
-    if (s.backgroundImage) return { key: 'img:' + s.backgroundImage.slice(-64) + s.backgroundImage.length, kind: 'image', url: s.backgroundImage, fit: 'cover', kenBurns: kb, veil: true, blur };
+    if (s.backgroundImage) return { key: 'img:' + s.backgroundImage.slice(-64) + s.backgroundImage.length + ':' + sv, kind: 'image', url: s.backgroundImage, fit: 'cover', kenBurns: kb, veil: sv, blur };
     if (s.backgroundGradient) return { key: 'css:' + s.backgroundGradient, kind: 'css', css: s.backgroundGradient, veil: false };
     if (s.backgroundColor) return { key: 'css:' + s.backgroundColor, kind: 'css', css: s.backgroundColor, veil: false };
   }
   if (c.kind === 'empty') {
     if (settings.standbyBackground) return { key: 'anim:' + settings.standbyBackground + (settings.standbyBackgroundColors ?? []).join(''), kind: 'animated', id: settings.standbyBackground, colors: settings.standbyBackgroundColors, veil: true };
-    if (theme.verseBackgroundImage) return { key: 'img:' + theme.verseBackgroundImage.slice(-64), kind: 'image', url: theme.verseBackgroundImage, fit: 'cover', kenBurns: kb, veil: true, blur };
+    if (theme.verseBackgroundImage) return { key: 'img:' + theme.verseBackgroundImage.slice(-64) + ':' + photoVeil, kind: 'image', url: theme.verseBackgroundImage, fit: 'cover', kenBurns: kb, veil: photoVeil, blur };
     return { key: 'css:standby', kind: 'css', css: DEFAULT_STANDBY, veil: true };
   }
-  if (theme.verseBackgroundVideo) return { key: 'vid:' + theme.verseBackgroundVideo, kind: 'video', url: theme.verseBackgroundVideo, veil: true };
+  if (theme.verseBackgroundVideo) return { key: 'vid:' + theme.verseBackgroundVideo + ':' + photoVeil, kind: 'video', url: theme.verseBackgroundVideo, veil: photoVeil };
   if (theme.verseBackgroundAnimated) return { key: 'anim:' + theme.verseBackgroundAnimated + (theme.verseBackgroundColors ?? []).join(''), kind: 'animated', id: theme.verseBackgroundAnimated, colors: theme.verseBackgroundColors, veil: true };
-  if (theme.verseBackgroundImage) return { key: 'img:' + theme.verseBackgroundImage.slice(-64) + theme.verseBackgroundImage.length, kind: 'image', url: theme.verseBackgroundImage, fit: 'cover', kenBurns: kb, veil: true, blur };
+  if (theme.verseBackgroundImage) return { key: 'img:' + theme.verseBackgroundImage.slice(-64) + theme.verseBackgroundImage.length + ':' + photoVeil, kind: 'image', url: theme.verseBackgroundImage, fit: 'cover', kenBurns: kb, veil: photoVeil, blur };
   return { key: 'css:theme:' + theme.className, kind: 'css', css: THEME_BG, veil: false };
 }
 
@@ -141,7 +154,7 @@ export function SceneBackground({ bg, still, quality, onFps, paused }: { bg: Sce
       {bg.kind === 'video' && (still
         ? <div className="absolute inset-0" style={{ background: DEFAULT_STANDBY }} />
         : <BgVideoLayer url={bg.url} />)}
-      {bg.veil && <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.55) 100%)' }} />}
+      {veilCss(bg.veil) && <div className="absolute inset-0" style={{ background: veilCss(bg.veil)! }} />}
     </div>
   );
 }
@@ -188,7 +201,28 @@ function FitText({ maxU, minU, children, className, style, align = 'center', fit
 }
 
 /* ── Contenu ────────────────────────────────────────────────────────────── */
-const ACCENT = '#E9C46A';
+/** Couleur de l'église (Réglages → Église), transmise par la variable CSS --bc-accent */
+export const DEFAULT_ACCENT = '#E9C46A';
+const ACCENT = 'var(--bc-accent, #E9C46A)';
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV'];
+/** {eglise} → nom de l'église (vide si non réglé) */
+function fillTokens(t: string | undefined, settings: ChurchSettings): string {
+  return nbsp((t ?? '').replace(/\{eglise\}/gi, settings.churchName || '').trim());
+}
+/** Typographie française : pas de « ou de ? seul en début de ligne, ni « 18 » et « h » séparés */
+function nbsp(t: string): string {
+  return t.replace(/« /g, '«\u00a0').replace(/ »/g, '\u00a0»').replace(/ ([:;!?])/g, '\u00a0$1').replace(/(\d) (h|min)\b/g, '$1\u00a0$2');
+}
+/** Nombre d'éléments qui peuvent apparaître un par un (points d'une liste, cases remplies) */
+export function revealTotal(s: CustomSlide): number {
+  if (s.slideType === 'bullet-list') return (s.bullets ?? []).filter(b => b && b.trim()).length;
+  if (s.slideType === 'info') return (s.rows ?? []).filter(r => r.value && r.value.trim()).length;
+  return 0;
+}
+/** Retire les guillemets déjà tapés pour ne pas les doubler */
+function stripQuotes(t: string): string {
+  return t.replace(/^\s*[«"“]\s*/, '').replace(/\s*[»"”]\s*$/, '');
+}
 
 function lineHeight(settings: ChurchSettings) {
   return settings.lineSpacing === 'tight' ? 1.3 : settings.lineSpacing === 'relaxed' ? 1.85 : 1.55;
@@ -210,7 +244,7 @@ function verseText(v: VerseReference, settings: ChurchSettings, style: string): 
     w++;
     const n = num(tok, i); if (n) return n;
     return on.has(w)
-      ? <span key={i} style={{ color: ACCENT, textShadow: '0 0 0.6em rgba(233,196,106,0.55)', transition: 'color 400ms ease' }}>{tok}</span>
+      ? <span key={i} style={{ color: ACCENT, textShadow: '0 0 0.35em currentColor', transition: 'color 400ms ease' }}>{tok}</span>
       : <span key={i} style={{ transition: 'color 400ms ease' }}>{tok}</span>;
   });
   return <>{q ? '« ' : ''}{parts}{q ? ' »' : ''}</>;
@@ -271,27 +305,50 @@ function VerseBlock({ verse, theme, settings, version, compact }: {
   );
 }
 
-function SlideBlock({ slide, theme }: { slide: CustomSlide; theme: DisplayTheme }) {
+function SlideBlock({ slide, theme, settings }: { slide: CustomSlide; theme: DisplayTheme; settings: ChurchSettings }) {
   const u = useSceneUnit();
   const type: SlideType = slide.slideType || 'text-title';
   const font = theme.fontFamily === 'serif' ? SERIF_STACK : SANS_STACK;
   const size = slide.fontSize ?? theme.fontSize;
   const tsize = slide.titleFontSize ?? slide.fontSize ?? theme.fontSize;
   const fg = slide.textColor || 'hsl(var(--display-fg))';
-  const fgDim = slide.textColor ? slide.textColor + 'd9' : 'hsl(var(--display-fg) / 0.82)';
+  const fgDim = slide.textColor && /^#[0-9a-f]{6}$/i.test(slide.textColor) ? slide.textColor + 'd9' : slide.textColor || 'hsl(var(--display-fg) / 0.82)';
   const align = slide.textAlign ?? 'center';
+  const justify = align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center';
   const shadow = slide.textShadow ? `0 ${0.12 * u}px ${0.6 * u}px rgba(0,0,0,0.8), 0 ${0.2 * u}px ${1.6 * u}px rgba(0,0,0,0.5)` : undefined;
   const common: CSSProperties = { fontFamily: font, color: fgDim, textShadow: shadow, lineHeight: 1.45 };
-  const title = (scale = 1) => slide.title ? (
-    <h2 style={{ fontFamily: font, color: fg, fontWeight: 700, lineHeight: 1.15, fontSize: (SLIDE_TITLE[tsize] ?? 4.4) * scale * u, textShadow: shadow, textAlign: align, animation: 'bc-rise-in 600ms ease-out both' }}>
-      {slide.title}
-    </h2>
-  ) : null;
 
-  if (type === 'image-full' || type === 'blank') return null;
+  // Champs (une case vide n'apparaît jamais sur la TV)
+  const label = fillTokens(slide.label, settings);
+  const title = fillTokens(slide.title, settings);
+  const subtitle = fillTokens(slide.subtitle, settings);
+  const footer = fillTokens(slide.footer, settings);
+  const content = fillTokens(slide.content, settings);
+
+  /* ── Mise en page commune : étiquette, titre, sous-titre, trait de couleur ── */
+  const labelEl = label ? (
+    <p style={{ fontFamily: SANS_STACK, color: ACCENT, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', fontSize: 1.8 * u, lineHeight: 1.3, textShadow: shadow, textAlign: align, width: '100%', animation: 'bc-fade-in 500ms ease-out both' }}>{label}</p>
+  ) : null;
+  const rule = <div style={{ width: 8 * u, height: Math.max(2, 0.3 * u), background: ACCENT, borderRadius: u, opacity: 0.9, alignSelf: justify, flexShrink: 0, animation: 'bc-fade-in 600ms ease-out 200ms both' }} />;
+  const subEl = subtitle ? (
+    <p style={{ fontFamily: SANS_STACK, color: fgDim, fontSize: 2.5 * u, fontWeight: 600, lineHeight: 1.3, textShadow: shadow, textAlign: align, width: '100%' }}>{subtitle}</p>
+  ) : null;
+  const footEl = footer ? (
+    <p style={{ fontFamily: SANS_STACK, color: ACCENT, fontWeight: 600, fontSize: 2 * u, letterSpacing: '0.06em', textShadow: shadow, textAlign: align, width: '100%' }}>{footer}</p>
+  ) : undefined;
+  const titleEl = (scale: number) => title ? (
+    <h2 style={{ fontFamily: font, color: fg, fontWeight: 700, lineHeight: 1.12, fontSize: (SLIDE_TITLE[tsize] ?? 4.4) * scale * u, textShadow: shadow, textAlign: align, width: '100%', animation: 'bc-rise-in 600ms ease-out both' }}>{title}</h2>
+  ) : null;
+  const head = (scale = 1.35) => (label || title || subtitle) ? (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: justify, gap: 0.9 * u }}>
+      {labelEl}{titleEl(scale)}{subEl}{(title || label) && rule}
+    </div>
+  ) : undefined;
+
+  if (type === 'image-full') return null;
   if (type === 'definition') {
     // Dictionnaire biblique : petite ligne dorée, le mot, la définition, les références
-    const head = (
+    const dhead = (
       <div style={{ width: '100%' }}>
         {slide.label && <p style={{ fontFamily: SANS_STACK, color: ACCENT, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', fontSize: 1.5 * u, textShadow: shadow, marginBottom: 0.6 * u }}>{slide.label}</p>}
         <h2 style={{ fontFamily: font, color: fg, fontWeight: 700, lineHeight: 1.1, fontSize: (SLIDE_TITLE[tsize] ?? 4.4) * 1.05 * u, textShadow: shadow, animation: 'bc-rise-in 600ms ease-out both' }}>{slide.title}</h2>
@@ -303,7 +360,7 @@ function SlideBlock({ slide, theme }: { slide: CustomSlide; theme: DisplayTheme 
       : undefined;
     return (
       <div className="h-full w-full flex flex-col">
-        <FitText maxU={(SLIDE_TEXT[size] ?? 3.6) * 1.15} minU={1.3} align="left" header={head} footer={foot} gapU={2.2}
+        <FitText maxU={(SLIDE_TEXT[size] ?? 3.6) * 1.15} minU={1.3} align="left" header={dhead} footer={foot} gapU={2.2}
           fitKey={slide.id + slide.content + (slide.title ?? '') + (slide.footer ?? '')}
           style={{ ...common, color: fg, animation: 'bc-fade-in 600ms ease-out 150ms both' }}>
           {slide.content.split('\n').filter(Boolean).map((para, i) => <p key={i} style={{ marginBottom: '0.55em' }}>{para}</p>)}
@@ -312,40 +369,96 @@ function SlideBlock({ slide, theme }: { slide: CustomSlide; theme: DisplayTheme 
     );
   }
   if (type === 'title-only') {
+    // Grand titre centré : étiquette au-dessus, trait, sous-titre et référence en dessous
+    const below = (subtitle || footer || label || title) ? (
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: justify, gap: 1.2 * u }}>
+        {(title || label) && rule}{subEl}{footEl}
+      </div>
+    ) : undefined;
     return <div className="h-full w-full flex flex-col justify-center">
-      <FitText maxU={(SLIDE_TITLE[tsize] ?? 4.4) * 1.35} minU={2} align={align} fitKey={slide.id + slide.title}
-        style={{ fontFamily: font, color: fg, fontWeight: 700, lineHeight: 1.15, textShadow: shadow, animation: 'bc-rise-in 600ms ease-out both' }}>
-        {slide.title}
+      <FitText maxU={(SLIDE_TITLE[tsize] ?? 4.4) * 1.8} minU={2} align={align} header={labelEl ?? undefined} footer={below} gapU={1.6}
+        fitKey={slide.id + title + label + subtitle + footer}
+        style={{ fontFamily: font, color: fg, fontWeight: 700, lineHeight: 1.12, textShadow: shadow, animation: 'bc-rise-in 600ms ease-out both' }}>
+        {title}
       </FitText>
     </div>;
   }
-  const bullets = (slide.bullets || []).filter(Boolean);
+  if (type === 'verse-title') {
+    // Verset : la référence en étiquette, le texte entre guillemets (jamais doublés)
+    const text = stripQuotes(content);
+    const refEl = title ? <p style={{ fontFamily: SANS_STACK, color: ACCENT, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', fontSize: 1.9 * u, textAlign: align, textShadow: shadow, width: '100%' }}>{title}</p> : undefined;
+    return (
+      <div className="h-full w-full flex flex-col">
+        <FitText maxU={(SLIDE_TEXT[size] ?? 3.6) * 1.4} minU={1.3} align={align} header={refEl} footer={footEl} gapU={2.4}
+          fitKey={slide.id + content + title + footer}
+          style={{ ...common, fontFamily: SERIF_STACK, color: fg, animation: 'bc-fade-in 600ms ease-out 150ms both' }}>
+          {text ? `« ${text} »` : ''}
+        </FitText>
+      </div>
+    );
+  }
+
+  const bullets = (slide.bullets || []).filter(b => b && b.trim());
   // Liste point par point : `revealed` = nombre de points déjà montrés (les autres gardent leur place)
   const shown = slide.revealBullets && typeof slide.revealed === 'number' ? slide.revealed : bullets.length;
-  const body = type === 'bullet-list' ? (
-    <ul style={{ display: 'inline-block', textAlign: 'left', margin: 0, padding: 0, listStyle: 'none' }}>
-      {bullets.map((b, i) => (
-        <li key={i} style={{ display: 'flex', gap: '0.6em', marginBottom: '0.45em', opacity: i < shown ? 1 : 0,
-          transform: i < shown ? 'none' : 'translateY(0.4em)', transition: 'opacity 500ms ease, transform 500ms ease',
-          animation: slide.revealBullets ? undefined : `bc-rise-in 500ms ease-out ${150 + i * 120}ms both` }}>
-          <span style={{ color: ACCENT }}>•</span><span>{b}</span>
-        </li>
-      ))}
-    </ul>
-  ) : slide.contentHtml ? (
-    <div className="slide-rich-content" dangerouslySetInnerHTML={{ __html: slide.contentHtml }} />
-  ) : (
-    <p className="whitespace-pre-wrap">{type === 'verse-title' ? `« ${slide.content} »` : slide.content}</p>
-  );
-  const header = type === 'verse-title'
-    ? (slide.title ? <p style={{ fontFamily: SANS_STACK, color: ACCENT, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', fontSize: 1.9 * u, textAlign: align, textShadow: shadow, width: '100%' }}>{slide.title}</p> : undefined)
-    : (slide.title ? <div style={{ width: '100%' }}>{title()}</div> : undefined);
+  const bstyle = slide.bulletStyle ?? 'puces';
+  const marker = (i: number) => bstyle === 'romains'
+    ? <span style={{ color: ACCENT, fontFamily: SERIF_STACK, fontWeight: 700, minWidth: '1.7em', textAlign: 'right', flexShrink: 0 }}>{ROMAN[i] ?? i + 1}.</span>
+    : bstyle === 'numeros'
+      ? <span style={{ color: ACCENT, fontFamily: SANS_STACK, fontWeight: 700, minWidth: '1.3em', textAlign: 'right', flexShrink: 0 }}>{i + 1}.</span>
+      : <span style={{ color: ACCENT, flexShrink: 0 }}>•</span>;
+
+  let body: ReactNode;
+  let bodyFooter: ReactNode | undefined = footEl;
+  let maxScale = 1.22;
+  if (type === 'bullet-list') {
+    body = (
+      <ul style={{ display: 'inline-block', textAlign: 'left', margin: 0, padding: 0, listStyle: 'none' }}>
+        {bullets.map((b, i) => (
+          <li key={i} style={{ display: 'flex', gap: '0.6em', marginBottom: '0.45em', opacity: i < shown ? 1 : 0,
+            transform: i < shown ? 'none' : 'translateY(0.4em)', transition: 'opacity 500ms ease, transform 500ms ease',
+            animation: slide.revealBullets ? undefined : `bc-rise-in 500ms ease-out ${150 + i * 120}ms both` }}>
+            {marker(i)}<span>{nbsp(b)}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  } else if (type === 'info') {
+    // Fiche : un texte (souvent un verset) puis des cases « libellé : valeur » ; les cases vides sont cachées
+    const rows = (slide.rows ?? []).filter(r => r.value && r.value.trim());
+    const rowsShown = slide.revealBullets && typeof slide.revealed === 'number' ? slide.revealed : rows.length;
+    const text = stripQuotes(content);
+    maxScale = 1.15;
+    bodyFooter = undefined;
+    body = (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: justify, gap: '0.7em', width: '100%' }}>
+        {text && <p className="whitespace-pre-wrap" style={{ fontFamily: footer ? SERIF_STACK : font, color: footer ? fg : fgDim, textAlign: align, width: '100%' }}>{footer ? `« ${text} »` : text}</p>}
+        {text && footer && <p style={{ fontFamily: SANS_STACK, color: ACCENT, fontWeight: 600, fontSize: '0.55em', letterSpacing: '0.06em', marginTop: '-0.3em', textAlign: align, width: '100%' }}>{footer}</p>}
+        {rows.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', columnGap: '0.9em', rowGap: '0.35em', alignItems: 'baseline', marginTop: text ? '0.3em' : 0 }}>
+            {rows.map((r, i) => (
+              <div key={i} style={{ display: 'contents' }}>
+                <span style={{ fontFamily: SANS_STACK, color: ACCENT, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', fontSize: '0.5em', textAlign: 'right', opacity: i < rowsShown ? 1 : 0, transition: 'opacity 500ms ease' }}>{fillTokens(r.label, settings)}</span>
+                <span style={{ color: fg, textAlign: 'left', opacity: i < rowsShown ? 1 : 0, transition: 'opacity 500ms ease' }}>{fillTokens(r.value, settings)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  } else if (slide.contentHtml) {
+    body = <div className="slide-rich-content" dangerouslySetInnerHTML={{ __html: slide.contentHtml }} />;
+  } else {
+    body = content ? <p className="whitespace-pre-wrap">{content}</p> : null;
+  }
+  if (!title && !label && type !== 'bullet-list' && type !== 'info') maxScale = 1.45;
+  const header = type === 'blank' ? undefined : head(type === 'info' || type === 'bullet-list' ? 1.3 : 1.35);
   // Un texte court grandit pour bien remplir un grand écran ; un texte long se réduit
   return (
     <div className="h-full w-full flex flex-col">
-      <FitText maxU={(SLIDE_TEXT[size] ?? 3.6) * 1.5} minU={1.3} align={align} header={header} gapU={2.4}
-        fitKey={slide.id + (slide.contentHtml ?? slide.content ?? '') + bullets.join('|') + (slide.title ?? '') + type}
-        style={{ ...common, ...(type === 'verse-title' ? { fontFamily: SERIF_STACK, color: fg } : {}), animation: 'bc-fade-in 600ms ease-out 150ms both' }}>
+      <FitText maxU={(SLIDE_TEXT[size] ?? 3.6) * maxScale} minU={1.3} align={align} header={header} footer={bodyFooter} gapU={2.4}
+        fitKey={slide.id + (slide.contentHtml ?? content) + bullets.join('|') + title + label + subtitle + footer + type + bstyle + JSON.stringify(slide.rows ?? [])}
+        style={{ ...common, animation: 'bc-fade-in 600ms ease-out 150ms both' }}>
         {body}
       </FitText>
     </div>
@@ -380,7 +493,7 @@ function StandbyBlock({ theme, settings, extras }: { theme: DisplayTheme; settin
   return (
     <div className="h-full w-full flex flex-col items-center justify-between text-center" style={{ color: fg }}>
       <div className="flex flex-col items-center" style={{ gap: 0.8 * u }}>
-        {logo && <img src={logo} alt="" className="bc-anim object-contain" style={{ height: 6 * u, animation: 'bc-breathe 6s ease-in-out infinite', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,.5))' }} />}
+        {logo && <img src={logo} alt="" className="bc-anim object-contain" style={{ height: (STANDBY_LOGO[settings.logoSize ?? 'moyen'] ?? 6) * u, maxWidth: 40 * u, animation: 'bc-breathe 6s ease-in-out infinite', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,.5))' }} />}
         {settings.churchName && (
           <p style={{ fontFamily: SANS_STACK, fontSize: 1.5 * u, letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.75, textShadow: shadow }}>{settings.churchName}</p>
         )}
@@ -418,6 +531,10 @@ function StandbyBlock({ theme, settings, extras }: { theme: DisplayTheme; settin
   );
 }
 
+/** Hauteur du logo (en u) selon Réglages → Église */
+const LOGO_H: Record<string, number> = { petit: 3.2, moyen: 4.4, grand: 6.2 };
+const STANDBY_LOGO: Record<string, number> = { petit: 4.5, moyen: 6, grand: 8 };
+
 /** Textes d'une scène (sans le fond), dans la zone de sécurité TV */
 export function SceneContent({ content, theme, settings, extras }: {
   content: SceneContentData; theme: DisplayTheme; settings: ChurchSettings; extras?: StandbyExtras;
@@ -427,14 +544,19 @@ export function SceneContent({ content, theme, settings, extras }: {
   const showLogo = !!logo && (
     ((content.kind === 'verse' || content.kind === 'dual-verse') && theme.showChurchLogo) ||
     (content.kind === 'slide' && !!content.slide?.showLogo));
-  const safe: CSSProperties = { position: 'absolute', inset: 0, padding: `${5.5 * u * 0.5625}px ${6 * u}px`, display: 'flex', flexDirection: 'column' };
+  const safe = { position: 'absolute', inset: 0, padding: `${5.5 * u * 0.5625}px ${6 * u}px`, display: 'flex', flexDirection: 'column',
+    '--bc-accent': settings.accentColor || DEFAULT_ACCENT } as CSSProperties;
+  const lh = LOGO_H[settings.logoSize ?? 'moyen'] ?? 4.4;
+  const corner = settings.logoPosition === 'coin';
   const split = settings.splitLayout === 'vertical';
   const bible2 = settings.bible2Version && settings.bible2Version !== 'BDS' ? settings.bible2Version : 'Darby';
   return (
     <div style={safe}>
-      {showLogo && content.kind !== 'empty' && (
-        <img src={logo} alt="" className="object-contain self-center" style={{ height: 4.2 * u, marginBottom: 1.2 * u, opacity: 0.92, filter: 'drop-shadow(0 3px 10px rgba(0,0,0,.5))' }} />
-      )}
+      {showLogo && content.kind !== 'empty' && (corner ? (
+        <img src={logo} alt="" className="object-contain" style={{ position: 'absolute', top: 2.4 * u, right: 2.8 * u, height: lh * 0.75 * u, maxWidth: 16 * u, opacity: 0.9, filter: 'drop-shadow(0 3px 10px rgba(0,0,0,.5))' }} />
+      ) : (
+        <img src={logo} alt="" className="object-contain self-center" style={{ height: lh * u, maxWidth: 30 * u, marginBottom: 1.2 * u, opacity: 0.92, filter: 'drop-shadow(0 3px 10px rgba(0,0,0,.5))', flexShrink: 0 }} />
+      ))}
       <div className="flex-1 min-h-0 w-full">
         {content.kind === 'empty' && <StandbyBlock theme={theme} settings={settings} extras={extras} />}
         {content.kind === 'verse' && content.verse && <VerseBlock verse={content.verse} theme={theme} settings={settings} />}
@@ -445,7 +567,7 @@ export function SceneContent({ content, theme, settings, extras }: {
             {content.verse2 && <div className="flex-1 min-h-0 min-w-0"><VerseBlock verse={content.verse2} theme={theme} settings={settings} version={content.verse2.version ?? bible2} compact /></div>}
           </div>
         )}
-        {content.kind === 'slide' && content.slide && <SlideBlock slide={content.slide} theme={theme} />}
+        {content.kind === 'slide' && content.slide && <SlideBlock slide={content.slide} theme={theme} settings={settings} />}
       </div>
     </div>
   );
@@ -484,7 +606,7 @@ export function SceneView({ content, theme, settings, extras, className, still, 
   return (
     <SceneRoot themeClass={theme.className} className={className} style={{ aspectRatio: '16 / 9', width: '100%', background: '#000' }}>
       <SceneBackground bg={bg} still={still} />
-      {wave && <WaveLayer on={!!wave} style={settings.waveStyle as WaveStyle} position={settings.wavePosition as WavePosition} color={settings.waveColor} still lift={waveLift} />}
+      {wave && <WaveLayer on={!!wave} style={settings.waveStyle as WaveStyle} position={settings.wavePosition as WavePosition} color={settings.waveColor || settings.accentColor} still lift={waveLift} />}
       <div style={{ position: 'absolute', inset: 0, opacity: overlay === 'background' ? 0 : 1, transition: 'opacity 300ms ease' }}>
         <SceneContent content={content} theme={theme} settings={settings} extras={extras} />
       </div>
@@ -567,7 +689,7 @@ export function Stage({ content, theme, settings, extras, overlay = 'none', onBg
           <SceneBackground key={qualityTick} bg={l.data} quality={settings.bgQuality} onFps={onBgFps} paused={overlay === 'black' || overlay === 'logo'} />
         </div>
       ))}
-      <WaveLayer on={!!wave && overlay !== 'black' && overlay !== 'logo'} style={settings.waveStyle as WaveStyle} position={settings.wavePosition as WavePosition} color={settings.waveColor} lift={waveLift} />
+      <WaveLayer on={!!wave && overlay !== 'black' && overlay !== 'logo'} style={settings.waveStyle as WaveStyle} position={settings.wavePosition as WavePosition} color={settings.waveColor || settings.accentColor} lift={waveLift} />
       <div style={{ position: 'absolute', inset: 0, opacity: overlay === 'background' ? 0 : 1, transition: 'opacity 500ms ease' }}>
         {textLayers.map(l => (
           <div key={l.id} style={layerStyle(l.phase, style, d)}>

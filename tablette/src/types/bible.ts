@@ -19,7 +19,7 @@ export interface VerseReference {
   version?: string;
 }
 
-export type SlideType = 'text-title' | 'title-only' | 'verse-title' | 'blank' | 'bullet-list' | 'image-full' | 'definition';
+export type SlideType = 'text-title' | 'title-only' | 'verse-title' | 'blank' | 'bullet-list' | 'image-full' | 'definition' | 'info';
 
 export interface CustomSlide {
   id: string;
@@ -51,6 +51,14 @@ export interface CustomSlide {
   /** Définition du dictionnaire : petite ligne au-dessus du mot, références en bas */
   label?: string;
   footer?: string;
+  /** Ligne sous le titre (orateur, date, prénoms des mariés…) */
+  subtitle?: string;
+  /** Cases « Libellé : valeur » (type info) ; une case vide n'est pas affichée */
+  rows?: { label: string; value: string }[];
+  /** Repères des listes */
+  bulletStyle?: 'puces' | 'numeros' | 'romains';
+  /** Voile sombre sur une photo ou une vidéo de fond, de 0 à 80 (%) */
+  veil?: number;
 }
 
 /** Métadonnées d'une présentation importée (PDF ou images) */
@@ -97,10 +105,13 @@ export interface TvVideoStatus {
   error?: string;
 }
 
+/** Bandeau nom (« Pasteur Daniel · Prédication ») */
+export interface Nameplate { name: string; role?: string }
+
 export interface DisplayMessage {
   type: 'show-verse' | 'show-slide' | 'clear' | 'theme-change' | 'request-next' | 'request-prev' | 'show-dual-verse' | 'queue-update' | 'ticker' | 'time-sync' | 'ping' | 'video-play' | 'video-control'
     /* Protocole v2 */
-    | 'state' | 'settings' | 'hello' | 'tv-status' | 'overlay' | 'video-prefetch' | 'roles' | 'wave';
+    | 'state' | 'settings' | 'hello' | 'tv-status' | 'overlay' | 'video-prefetch' | 'roles' | 'wave' | 'nameplate';
   /** NOIR / LOGO / FOND SEUL */
   overlay?: 'none' | 'black' | 'logo' | 'background';
   /** Rôle de chaque TV (par tvId) */
@@ -123,6 +134,8 @@ export interface DisplayMessage {
   tickerText?: string;
   /** Onde décorative allumée (type 'wave' et 'state') */
   wave?: boolean;
+  /** Bandeau avec un nom, en bas à gauche des TV (type 'nameplate' et 'state') ; null = masqué */
+  nameplate?: Nameplate | null;
   timestamp?: number;
   // Vidéo locale
   videoUrl?: string;

@@ -2,6 +2,7 @@
    Chaque déroulé s'enregistre tout seul sous son nom (biblecast:programmes). */
 import { genId } from '@/lib/utils';
 import { getVerse, parseReference } from '@/lib/bible';
+import { templateById, slidesFromTemplate } from '@/lib/slideTemplates';
 import type { BibleData, CustomSlide, QueueItem, VerseReference } from '@/types/bible';
 
 export interface SavedProgramme { id: string; name: string; savedAt: number; queue: QueueItem[] }
@@ -75,38 +76,35 @@ export function sectionOf(queue: QueueItem[]): Record<string, string | null> {
 /* ── Modèles déjà remplis ─────────────────────────────────────────────── */
 type Spec =
   | { section: string; color: string; wave?: boolean }
-  | { slide: Omit<CustomSlide, 'id'> }
+  | { tpl: string; patch?: Partial<CustomSlide> }
   | { ref: string };
 
-const base = { content: '', textColor: '#ffffff', fontSize: 'large' as const, textAlign: 'center' as const, textShadow: true, showLogo: false };
-const titleSlide = (title: string, anim: string, extra: Partial<CustomSlide> = {}): Spec =>
-  ({ slide: { ...base, title, slideType: 'title-only', fontSize: 'xlarge', backgroundAnimated: anim, ...extra } });
-const listSlide = (title: string, bullets: string[], anim: string): Spec =>
-  ({ slide: { ...base, title, slideType: 'bullet-list', bullets, textAlign: 'left', revealBullets: true, backgroundAnimated: anim } });
+/** Slides prises dans le catalogue des modèles (même style partout) */
+const tpl = (id: string, patch?: Partial<CustomSlide>): Spec => ({ tpl: id, patch });
 
 export const DEROULE_TEMPLATES: { name: string; description: string; specs: Spec[] }[] = [
   { name: 'Culte du dimanche', description: '8 moments, slides et bénédiction prêtes', specs: [
-    { section: 'Accueil', color: '#2a9d8f' }, titleSlide('Bienvenue !', 'aurore', { showLogo: true }),
-    { section: 'Louange et adoration', color: '#f4a261', wave: true }, titleSlide('Louange & Adoration', 'pourpre'),
-    { section: 'Prière', color: '#457b9d' }, titleSlide('Prière', 'nuit'),
+    { section: 'Accueil', color: '#2a9d8f' }, tpl('bienvenue'),
+    { section: 'Louange et adoration', color: '#f4a261', wave: true }, tpl('louange'),
+    { section: 'Prière', color: '#457b9d' }, tpl('priere'),
     { section: 'Lecture biblique', color: '#8338ec' },
-    { section: 'Prédication', color: '#e63946' }, { slide: { ...base, title: 'Prédication', content: 'Thème : \nTexte : ', slideType: 'text-title', backgroundAnimated: 'nuit', showLogo: true } },
-    { section: 'Offrandes', color: '#fb8500' }, titleSlide('Dîmes & Offrandes', 'lumiere', { textColor: '#ffd700' }), { ref: 'Malachie 3:10' },
-    { section: 'Annonces', color: '#2a9d8f' }, listSlide('Annonces de la semaine', ['Première annonce', 'Deuxième annonce'], 'ocean'),
-    { section: 'Bénédiction', color: '#f4a261' }, { ref: 'Nombres 6:24-26' },
+    { section: 'Prédication', color: '#e63946' }, tpl('predication'), tpl('points'),
+    { section: 'Offrandes', color: '#fb8500' }, tpl('offrande'),
+    { section: 'Annonces', color: '#2a9d8f' }, tpl('annonces'),
+    { section: 'Bénédiction', color: '#f4a261' }, tpl('benediction'), tpl('au-revoir'),
   ] },
   { name: 'Réunion de prière', description: '5 moments, sujets de prière point par point', specs: [
-    { section: 'Accueil', color: '#2a9d8f' }, titleSlide('Bienvenue !', 'aurore', { showLogo: true }),
-    { section: 'Louange', color: '#f4a261', wave: true }, titleSlide('Louange', 'pourpre'),
+    { section: 'Accueil', color: '#2a9d8f' }, tpl('bienvenue'),
+    { section: 'Louange', color: '#f4a261', wave: true }, tpl('louange', { title: 'Louange' }),
     { section: 'Méditation', color: '#8338ec' },
-    { section: 'Sujets de prière', color: '#457b9d' }, listSlide('Sujets de prière', ['Premier sujet', 'Deuxième sujet', 'Troisième sujet'], 'nuit'),
-    { section: 'Bénédiction', color: '#f4a261' }, { ref: 'Nombres 6:24-26' },
+    { section: 'Sujets de prière', color: '#457b9d' }, tpl('sujets'),
+    { section: 'Bénédiction', color: '#f4a261' }, tpl('benediction'),
   ] },
   { name: 'Étude biblique', description: '4 moments, questions point par point', specs: [
-    { section: 'Prière d\'ouverture', color: '#457b9d' }, titleSlide('Prière', 'nuit'),
+    { section: 'Prière d\'ouverture', color: '#457b9d' }, tpl('priere', { title: 'Prière d\'ouverture' }),
     { section: 'Texte étudié', color: '#8338ec' },
-    { section: 'Questions', color: '#2a9d8f' }, listSlide('Questions', ['Première question', 'Deuxième question'], 'ocean'),
-    { section: 'Prière finale', color: '#457b9d' }, titleSlide('Prière', 'nuit'),
+    { section: 'Questions', color: '#2a9d8f' }, tpl('question'),
+    { section: 'Prière finale', color: '#457b9d' }, tpl('priere', { title: 'Prière finale' }),
   ] },
 ];
 
@@ -127,7 +125,10 @@ export function buildTemplate(t: typeof DEROULE_TEMPLATES[number], bible: BibleD
   const out: QueueItem[] = [];
   for (const s of t.specs) {
     if ('section' in s) out.push({ id: genId(), type: 'section', sectionName: s.section, sectionColor: s.color, ...(s.wave ? { wave: true } : {}) });
-    else if ('slide' in s) out.push({ id: genId(), type: 'slide', slide: { id: genId(), ...s.slide } });
+    else if ('tpl' in s) {
+      const t = templateById(s.tpl);
+      if (t) for (const sl of slidesFromTemplate(t)) out.push({ id: genId(), type: 'slide', slide: { ...sl, ...(s.patch ?? {}) } });
+    }
     else for (const v of versesOf(bible, s.ref)) out.push({ id: genId(), type: 'verse', verse: v });
   }
   return out;

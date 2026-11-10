@@ -11,6 +11,8 @@ import { BIBLE_VERSIONS } from '@/lib/versions';
 import { cn } from '@/lib/utils';
 import { importBDS, clearBDSCache } from '@/lib/bible';
 import { ANIMATED_BACKGROUNDS } from '@/components/scene/animated';
+import { SceneView, DEFAULT_PHOTO_VEIL } from '@/components/scene/Scene';
+import type { CustomSlide, DisplayTheme } from '@/types/bible';
 
 /** Groupe de boutons à choix unique (grands boutons, faciles au doigt) */
 function Choice<T extends string>({ value, options, onChange }: { value: T; options: { value: T; label: string; hint?: string }[]; onChange: (v: T) => void }) {
@@ -73,6 +75,14 @@ export interface ChurchSettings {
   wavePosition?: 'bas' | 'centre' | 'haut';
   /** '' = or du thème */
   waveColor?: string;
+  /* Style de l'église */
+  /** Couleur des étiquettes, traits, références et puces (hex) */
+  accentColor?: string;
+  logoSize?: 'petit' | 'moyen' | 'grand';
+  /** Logo au-dessus du texte, ou petit dans le coin comme une chaîne de télévision */
+  logoPosition?: 'haut' | 'coin';
+  /** Voile sombre des photos et vidéos de fond, de 0 à 80 (%) */
+  photoVeil?: number;
 }
 
 const STORAGE_KEY = 'biblecast-settings';
@@ -198,9 +208,29 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 interface SettingsPanelProps {
   onClose: () => void;
   onBible2Imported?: () => void;
+  /** Thème actuel, pour l'aperçu du style de l'église */
+  theme?: DisplayTheme;
 }
 
-export default function SettingsPanel({ onClose, onBible2Imported }: SettingsPanelProps) {
+/** Couleurs proposées pour l'église (lisibles sur fond sombre) */
+export const ACCENT_COLORS = [
+  { value: '#E9C46A', label: 'Or' },
+  { value: '#7CC6F2', label: 'Ciel' },
+  { value: '#F08A8A', label: 'Corail' },
+  { value: '#7FD8A6', label: 'Émeraude' },
+  { value: '#B9A4FF', label: 'Lavande' },
+  { value: '#F4A261', label: 'Ambre' },
+  { value: '#F5F1E8', label: 'Ivoire' },
+];
+
+/** Slide d'exemple pour vérifier la couleur et la taille du logo */
+const STYLE_SAMPLE: CustomSlide = {
+  id: 'style-sample', slideType: 'text-title', label: 'Prédication', title: 'Marcher par la foi', subtitle: 'Pasteur Daniel',
+  content: 'Car nous marchons par la foi et non par la vue.', footer: '2 Corinthiens 5:7',
+  backgroundAnimated: 'nuit', textColor: '#ffffff', fontSize: 'large', textAlign: 'center', textShadow: true, showLogo: true,
+};
+
+export default function SettingsPanel({ onClose, onBible2Imported, theme }: SettingsPanelProps) {
   const [settings, setSettings] = useState<ChurchSettings>(loadSettings);
   const [bdsStatus, setBdsStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [backupStatus, setBackupStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -408,6 +438,51 @@ export default function SettingsPanel({ onClose, onBible2Imported }: SettingsPan
                 <Button size="sm" variant="secondary" onClick={handleLogoUpload} className="gap-1.5">
                   <Upload className="h-4 w-4" /> {settings.churchLogo ? 'Changer' : 'Uploader'}
                 </Button>
+              </div>
+            </div>
+
+            {/* ── Style de l'église : s'applique à toutes les slides ── */}
+            <div className="space-y-3 rounded-xl border border-border/50 bg-secondary/20 p-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Style de l'église</p>
+                <p className="text-[11px] text-muted-foreground">Couleur des étiquettes, traits et références sur toutes les slides, et place du logo.</p>
+              </div>
+              {theme && (
+                <div className="rounded-lg overflow-hidden border border-border/50">
+                  <SceneView content={{ id: 1, kind: 'slide', slide: STYLE_SAMPLE }} theme={theme} settings={settings} still />
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Couleur de l'église</Label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {ACCENT_COLORS.map(c => (
+                    <button key={c.value} onClick={() => set('accentColor', c.value)} title={c.label} aria-label={c.label}
+                      className={cn('h-10 w-10 rounded-full border-2 transition-transform', (settings.accentColor || '#E9C46A').toLowerCase() === c.value.toLowerCase() ? 'border-foreground scale-110' : 'border-border/40')}
+                      style={{ background: c.value }} />
+                  ))}
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                    <input type="color" value={settings.accentColor || '#E9C46A'} onChange={e => set('accentColor', e.target.value)} className="h-10 w-10 rounded border border-border/30 bg-transparent" />
+                    Autre
+                  </label>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Taille du logo{!settings.churchLogo && ' (ajoutez d\'abord un logo)'}</Label>
+                <Choice value={settings.logoSize ?? 'moyen'} onChange={v => set('logoSize', v)}
+                  options={[{ value: 'petit', label: 'Petit' }, { value: 'moyen', label: 'Moyen' }, { value: 'grand', label: 'Grand' }]} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Place du logo sur les slides</Label>
+                <Choice value={settings.logoPosition ?? 'haut'} onChange={v => set('logoPosition', v)}
+                  options={[{ value: 'haut', label: 'Au-dessus du texte' }, { value: 'coin', label: 'Petit, dans le coin', hint: 'comme une chaîne de télé' }]} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground flex justify-between">
+                  <span>Voile sombre sur les photos</span><span className="font-semibold text-foreground">{settings.photoVeil ?? DEFAULT_PHOTO_VEIL} %</span>
+                </Label>
+                <input type="range" min={0} max={80} step={5} value={settings.photoVeil ?? DEFAULT_PHOTO_VEIL}
+                  onChange={e => set('photoVeil', Number(e.target.value))} className="w-full h-8 accent-primary" />
+                <p className="text-[11px] text-muted-foreground">Assombrit les photos de fond pour que le texte reste lisible. Chaque slide peut avoir son propre réglage.</p>
               </div>
             </div>
 

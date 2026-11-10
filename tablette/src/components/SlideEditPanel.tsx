@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   X, Send, Plus, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, BookOpen, Scissors,
-  FileText, Presentation, List, Frame, Check, Sparkles, KeyboardOff,
+  FileText, Presentation, List, Frame, Check, Sparkles, KeyboardOff, Rows3, Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { cn, genId } from '@/lib/utils';
 import type { BibleData, CustomSlide, DisplayTheme, SlideType } from '@/types/bible';
 import type { ChurchSettings } from '@/components/SettingsPanel';
 import RichTextEditor from '@/components/RichTextEditor';
-import { SceneView } from '@/components/scene/Scene';
+import { SceneView, DEFAULT_PHOTO_VEIL } from '@/components/scene/Scene';
 import AnimatedPicker from '@/components/AnimatedPicker';
 import { getVerse, parseReference, getParallelVerse } from '@/lib/bible';
 import { versionOf } from '@/lib/versions';
@@ -34,6 +34,7 @@ const TYPES: { t: SlideType; label: string; Icon: typeof FileText }[] = [
   { t: 'title-only', label: 'Titre seul', Icon: Presentation },
   { t: 'verse-title', label: 'Verset', Icon: BookOpen },
   { t: 'bullet-list', label: 'Liste', Icon: List },
+  { t: 'info', label: 'Cases', Icon: Rows3 },
   { t: 'image-full', label: 'Affiche / image', Icon: ImageIcon },
   { t: 'blank', label: 'Texte seul', Icon: Frame },
 ];
@@ -122,7 +123,7 @@ export default function SlideEditPanel({ slide, where, onChange, onSplit, onClos
   const set = (patch: Partial<CustomSlide>) => onChange({ ...slide, ...patch });
   const [bgTab, setBgTab] = useState<'anime' | 'couleur' | 'photo'>(slide.backgroundImage ? 'photo' : slide.backgroundAnimated ? 'anime' : 'couleur');
   const [photos, setPhotos] = useState<GalleryImage[]>([]);
-  const [verseRef, setVerseRef] = useState(slide.slideType === 'verse-title' ? slide.title : '');
+  const [verseRef, setVerseRef] = useState(slide.slideType === 'verse-title' ? slide.title : (slide.footer ?? ''));
   const [verseVersion, setVerseVersion] = useState<'LSG' | 'Darby'>('LSG');
   const v2Name = versionOf(bible2) ?? 'Darby';
   const [verseError, setVerseError] = useState('');
@@ -170,6 +171,9 @@ export default function SlideEditPanel({ slide, where, onChange, onSplit, onClos
   const scene = useMemo(() => ({ id: 1, kind: 'slide' as const, slide: { ...slide, revealed: undefined } }), [slide]);
   const tooLong = slideIsTooLong(slide);
   const isImage = slide.slideType === 'image-full';
+  const hasLabel = !isImage && slide.slideType !== 'blank' && slide.slideType !== 'verse-title';
+  const hasSubtitle = slide.slideType === 'title-only' || slide.slideType === 'text-title' || slide.slideType === 'info';
+  const hasFooter = slide.slideType === 'title-only' || slide.slideType === 'text-title' || slide.slideType === 'info';
 
   const fillVerse = () => {
     const r = parseReference(verseRef);
@@ -186,7 +190,10 @@ export default function SlideEditPanel({ slide, where, onChange, onSplit, onClos
     if (!texts.length) { setVerseError('Verset introuvable dans cette Bible'); return; }
     setVerseError('');
     const ref = `${r.book} ${r.chapter}${r.verseStart ? `:${from}${to > from ? `-${to}` : ''}` : ''}`;
-    set({ title: verseVersion === 'Darby' ? `${ref} · ${v2Name}` : ref, content: texts.join(' '), contentHtml: undefined });
+    const shown = verseVersion === 'Darby' ? `${ref} · ${v2Name}` : ref;
+    // Verset seul : la référence devient l'étiquette ; ailleurs, elle va sous le texte
+    if (slide.slideType === 'verse-title') set({ title: shown, content: texts.join(' '), contentHtml: undefined });
+    else set({ content: texts.join(' '), contentHtml: undefined, footer: shown });
     setEditorKey(k => k + 1);
   };
 
@@ -240,8 +247,14 @@ export default function SlideEditPanel({ slide, where, onChange, onSplit, onClos
             </div>
           </Field>
 
-          {slide.slideType === 'verse-title' && (
-            <Field label="Verset depuis la Bible" hint={verseError || 'Le texte et la référence se remplissent tout seuls.'}>
+          {hasLabel && (
+            <Field label="Étiquette (petite ligne en couleur, au-dessus)">
+              <Input value={slide.label ?? ''} onChange={e => set({ label: e.target.value })} placeholder="ex. Prière, Louange… ou {eglise} pour le nom de l'église" className="h-11 bg-secondary" />
+            </Field>
+          )}
+
+          {(slide.slideType === 'verse-title' || slide.slideType === 'info' || slide.slideType === 'text-title') && (
+            <Field label="Verset depuis la Bible" hint={verseError || (slide.slideType === 'verse-title' ? 'Le texte et la référence se remplissent tout seuls.' : 'Remplit le texte, et la référence sous le texte.')}>
               <div className="flex gap-2">
                 <Input value={verseRef} onChange={e => setVerseRef(e.target.value)} onKeyDown={e => e.key === 'Enter' && fillVerse()}
                   placeholder="Jean 3:16 ou Ps 23 1-3" className="h-11 bg-secondary flex-1" />
@@ -259,7 +272,46 @@ export default function SlideEditPanel({ slide, where, onChange, onSplit, onClos
 
           {!isImage && (
             <Field label={slide.slideType === 'verse-title' ? 'Référence affichée' : 'Titre'}>
-              <Input value={slide.title} onChange={e => set({ title: e.target.value })} placeholder="Titre de la slide" className="h-11 bg-secondary text-base" />
+              <Input value={slide.title} onChange={e => set({ title: e.target.value })} placeholder={slide.slideType === 'verse-title' ? 'Jean 3:16' : slide.label ? `Titre (ex. thème de la ${slide.label.toLowerCase()})` : 'Titre de la slide'} className="h-11 bg-secondary text-base" />
+            </Field>
+          )}
+
+          {hasSubtitle && (
+            <Field label="Sous-titre" hint="Orateur, date, prénoms… Laissé vide, il n'apparaît pas.">
+              <Input value={slide.subtitle ?? ''} onChange={e => set({ subtitle: e.target.value })} placeholder="ex. Pasteur Daniel · Samedi 12 décembre" className="h-11 bg-secondary" />
+            </Field>
+          )}
+
+          {slide.slideType === 'info' && (
+            <Field label="Texte (facultatif)">
+              <textarea value={slide.content ?? ''} onChange={e => set({ content: e.target.value })} placeholder="Un verset ou une phrase de présentation"
+                className="w-full min-h-[88px] rounded-lg border border-border/50 bg-secondary text-base px-3 py-2 resize-y text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50" />
+            </Field>
+          )}
+
+          {slide.slideType === 'info' && (
+            <Field label="Cases" hint="Une case sans valeur n'est pas affichée sur la TV.">
+              <div className="space-y-2">
+                {(slide.rows ?? []).map((r, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input value={r.label} onChange={e => set({ rows: (slide.rows ?? []).map((x, j) => j === i ? { ...x, label: e.target.value } : x) })}
+                      placeholder="Libellé" className="h-11 bg-secondary w-32 shrink-0 text-xs uppercase tracking-wide" />
+                    <Input value={r.value} onChange={e => set({ rows: (slide.rows ?? []).map((x, j) => j === i ? { ...x, value: e.target.value } : x) })}
+                      placeholder="À remplir" className="h-11 bg-secondary flex-1 text-base" />
+                    <Button variant="ghost" className="h-11 w-11 p-0 shrink-0 text-muted-foreground" aria-label="Supprimer la case"
+                      onClick={() => set({ rows: (slide.rows ?? []).filter((_, j) => j !== i) })}><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                ))}
+                <Button variant="secondary" className="h-11 gap-1.5 w-full" onClick={() => set({ rows: [...(slide.rows ?? []), { label: '', value: '' }] })}>
+                  <Plus className="h-4 w-4" /> Ajouter une case
+                </Button>
+                <button onClick={() => set({ revealBullets: !slide.revealBullets })}
+                  className={cn('w-full min-h-[44px] px-3 rounded-lg border text-sm text-left flex items-center gap-2',
+                    slide.revealBullets ? 'border-primary/60 bg-primary/10 text-foreground' : 'border-border/40 bg-secondary/40 text-muted-foreground')}>
+                  <span className={cn('h-5 w-5 rounded border flex items-center justify-center', slide.revealBullets ? 'bg-primary border-primary text-primary-foreground' : 'border-border')}>{slide.revealBullets && <Check className="h-3.5 w-3.5" />}</span>
+                  Montrer les cases une par une (chaque « Suivant » en ajoute une)
+                </button>
+              </div>
             </Field>
           )}
 
@@ -269,6 +321,18 @@ export default function SlideEditPanel({ slide, where, onChange, onSplit, onClos
                 value={slide.contentHtml ?? plainToHtml(slide.content ?? '')}
                 onChange={(html, plain) => set({ contentHtml: html, content: plain })}
                 placeholder="Saisissez le texte…" minHeight="140px" />
+            </Field>
+          )}
+
+          {hasFooter && (
+            <Field label="Référence sous le texte" hint="En couleur de l'église, sous le texte. Laissée vide, elle n'apparaît pas.">
+              <Input value={slide.footer ?? ''} onChange={e => set({ footer: e.target.value })} placeholder="ex. Jacques 5:16" className="h-11 bg-secondary" />
+            </Field>
+          )}
+
+          {slide.slideType === 'bullet-list' && (
+            <Field label="Repères">
+              <Seg value={slide.bulletStyle ?? 'puces'} options={[['puces', '•  Puces'], ['numeros', '1.  Numéros'], ['romains', 'I.  Romains']] as const} onChange={v => set({ bulletStyle: v })} />
             </Field>
           )}
 
@@ -350,6 +414,16 @@ export default function SlideEditPanel({ slide, where, onChange, onSplit, onClos
                         className={cn('h-14 rounded-lg border-2 bg-cover bg-center', slide.backgroundImage === ph.url ? 'border-primary' : 'border-transparent')}
                         style={{ backgroundImage: `url(${ph.url})` }} />
                     ))}
+                  </div>
+                )}
+                {(slide.backgroundImage || slide.backgroundVideo) && (
+                  <div className="space-y-1 pt-1">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Voile sombre sur la photo</span>
+                      <span className="font-semibold text-foreground">{slide.veil ?? settings.photoVeil ?? DEFAULT_PHOTO_VEIL} %{slide.veil === undefined && ' (réglage de l\'église)'}</span>
+                    </div>
+                    <input type="range" min={0} max={80} step={5} value={slide.veil ?? settings.photoVeil ?? DEFAULT_PHOTO_VEIL}
+                      onChange={e => set({ veil: Number(e.target.value) })} className="w-full h-8 accent-primary" aria-label="Voile sombre sur la photo" />
                   </div>
                 )}
               </Field>

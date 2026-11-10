@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useBroadcastReceiver, useControlSender, getLastDisplay, getLastTheme } from '@/hooks/useBroadcastChannel';
 import { useTvLink } from '@/hooks/useTvLink';
 import { WS_PORT } from '@/hooks/useLocalServer';
-import type { VerseReference, DisplayTheme, DisplayMessage, TvVideoStatus, QueueItem, TvRole } from '@/types/bible';
+import type { VerseReference, DisplayTheme, DisplayMessage, TvVideoStatus, QueueItem, TvRole, Nameplate } from '@/types/bible';
 import { loadBible, getVerse, getChapters, getVerses, parseReference } from '@/lib/bible';
 import { loadSettings, type ChurchSettings } from '@/components/SettingsPanel';
 import { Stage, type SceneContentData, type StageOverlay } from '@/components/scene/Scene';
@@ -99,6 +99,7 @@ export default function Display() {
   const [clockOffset, setClockOffset] = useState(0);
   const [tickerText, setTickerText] = useState('');
   const [wave, setWave] = useState(false);
+  const [nameplate, setNameplate] = useState<Nameplate | null>(null);
   const nativeVideoRef = useRef<NativeVideoBridge | null>(getNativeBridge());
   const nativeActiveRef = useRef(false);
   const [webVideoUrl, setWebVideoUrl] = useState<string | null>(null);
@@ -289,6 +290,7 @@ export default function Display() {
         // Une TV qui a reçu un envoi ciblé garde son propre contenu
         setTickerText(msg.tickerByTv?.[tvId] ?? msg.tickerText ?? '');
         setWave(!!msg.wave);
+        setNameplate(msg.nameplate ?? null);
         const ov = msg.overlayByTv?.[tvId] ?? msg.overlay;
         if (ov) setOverlay(ov);
         if (msg.roles) setRoles(msg.roles);
@@ -307,6 +309,7 @@ export default function Display() {
       case 'time-sync': if (msg.timestamp) setClockOffset(msg.timestamp - Date.now()); break;
       case 'ticker': setTickerText(msg.tickerText ?? ''); break;
       case 'wave': setWave(!!msg.wave); break;
+      case 'nameplate': setNameplate(msg.nameplate ?? null); break;
       case 'video-play': if (msg.videoUrl) playVideo(msg.videoUrl, !!msg.videoLoop); break;
       case 'video-control': controlVideo(msg); break;
       case 'video-prefetch':
@@ -437,6 +440,10 @@ export default function Display() {
         </div>
       )}
 
+      {/* Bandeau avec un nom (orateur, invité…), en bas à gauche, au-dessus du bandeau défilant */}
+      <NameplateBar nameplate={overlay === 'black' || overlay === 'logo' ? null : nameplate} accent={settings.accentColor}
+        bottom={wave && (settings.wavePosition ?? 'bas') === 'bas' ? (tickerText ? '14vw' : '11vw') : tickerText ? '7.2vw' : '4.2vw'} />
+
       {/* Bandeau d'annonce défilant */}
       {tickerText && overlay !== 'black' && overlay !== 'logo' && (
         <>
@@ -452,6 +459,33 @@ export default function Display() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/** Bandeau nom : glisse depuis la gauche, reste lisible sur tous les fonds (léger pour les petites TV) */
+function NameplateBar({ nameplate, accent, bottom }: { nameplate: Nameplate | null; accent?: string; bottom: string }) {
+  // Garde le dernier nom pendant l'animation de sortie
+  const [shown, setShown] = useState<Nameplate | null>(nameplate);
+  const [on, setOn] = useState(!!nameplate);
+  useEffect(() => {
+    if (nameplate) { setShown(nameplate); const r = requestAnimationFrame(() => setOn(true)); return () => cancelAnimationFrame(r); }
+    setOn(false);
+    const t = setTimeout(() => setShown(null), 600);
+    return () => clearTimeout(t);
+  }, [nameplate]);
+  if (!shown) return null;
+  const a = accent || '#E9C46A';
+  return (
+    <div className="fixed z-40" style={{ left: '5vw', bottom, maxWidth: '70vw',
+      transform: on ? 'none' : 'translateX(-4vw)', opacity: on ? 1 : 0, transition: 'opacity 500ms ease, transform 500ms cubic-bezier(0.22, 0.61, 0.36, 1)' }}>
+      <div style={{ display: 'flex', alignItems: 'stretch', background: 'linear-gradient(to right, rgba(10,8,20,0.9), rgba(10,8,20,0.72))', borderRadius: '0.4vw', overflow: 'hidden', boxShadow: '0 0.6vw 2vw rgba(0,0,0,0.45)' }}>
+        <div style={{ width: '0.45vw', background: a, flexShrink: 0 }} />
+        <div style={{ padding: '0.9vw 2vw 1vw 1.4vw' }}>
+          <p style={{ color: '#fff', fontFamily: 'var(--bc-serif)', fontWeight: 700, fontSize: '2.5vw', lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{shown.name}</p>
+          {shown.role && <p style={{ color: a, fontFamily: 'var(--bc-sans)', fontWeight: 700, fontSize: '1.15vw', letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: '0.35vw', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{shown.role}</p>}
+        </div>
+      </div>
     </div>
   );
 }

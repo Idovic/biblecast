@@ -3,16 +3,15 @@
 import { useRef, useState } from 'react';
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Pencil, Image as ImageIcon,
-  Download, Upload, X, LayoutTemplate, CheckCircle2, Send, Copy, Undo2,
-  HandHeart, Megaphone, BookOpen, Music2, Mic2, Users, Gift,
-  List, Church, Sparkles,
+  Download, Upload, LayoutTemplate, CheckCircle2, Send, Copy, Undo2, List,
 } from 'lucide-react';
 import { cn, genId } from '@/lib/utils';
 import type { CustomSlide, DisplayTheme, SlideType } from '@/types/bible';
 import type { ChurchSettings } from '@/components/SettingsPanel';
 import { pickImage } from '@/lib/image';
 import { SceneView } from '@/components/scene/Scene';
-import { getAnimatedBackground } from '@/components/scene/animated';
+import TemplateCatalog from '@/components/TemplateCatalog';
+import { slidesFromTemplate, MOMENT_BACKGROUND, type SlideTemplate } from '@/lib/slideTemplates';
 
 interface SlidesEditorProps {
   slides: CustomSlide[];
@@ -28,250 +27,6 @@ interface SlidesEditorProps {
   settings: ChurchSettings;
 }
 
-interface SlideTemplate {
-  id: string;
-  name: string;
-  Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
-  iconColor: string;
-  description: string;
-  slide: Omit<CustomSlide, 'id'>;
-}
-
-const SLIDE_TEMPLATES: SlideTemplate[] = [
-  {
-    id: 'bienvenue',
-    name: 'Bienvenue',
-    Icon: Church,
-    iconColor: '#93c5fd',
-    description: 'Accueil des fidèles',
-    slide: {
-      backgroundAnimated: 'aurore',
-      title: 'Bienvenue !',
-      content: '',
-      slideType: 'title-only',
-      textColor: '#ffffff',
-      backgroundGradient: 'linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)',
-      fontSize: 'xlarge',
-      textAlign: 'center',
-      textShadow: true,
-      showLogo: true,
-    },
-  },
-  {
-    id: 'priere',
-    name: "Prière d'intercession",
-    Icon: HandHeart,
-    iconColor: '#f9a8d4',
-    description: 'Prière collective',
-    slide: {
-      backgroundAnimated: 'nuit',
-      title: "Prière d'intercession",
-      content: '« La prière fervente du juste a une grande efficace. »\n— Jacques 5:16',
-      slideType: 'text-title',
-      textColor: '#f5f5dc',
-      backgroundGradient: 'linear-gradient(135deg,#360033,#0b8793)',
-      fontSize: 'large',
-      textAlign: 'center',
-      textShadow: true,
-      showLogo: false,
-    },
-  },
-  {
-    id: 'ecole',
-    name: 'École du dimanche',
-    Icon: BookOpen,
-    iconColor: '#86efac',
-    description: 'Thème + verset',
-    slide: {
-      backgroundAnimated: 'aube',
-      title: 'École du dimanche',
-      content: 'Thème : \nVerset : ',
-      slideType: 'text-title',
-      textColor: '#ffffff',
-      backgroundGradient: 'linear-gradient(135deg,#134e5e,#71b280)',
-      fontSize: 'large',
-      textAlign: 'center',
-      textShadow: false,
-      showLogo: false,
-    },
-  },
-  {
-    id: 'annonce',
-    name: 'Annonces',
-    Icon: Megaphone,
-    iconColor: '#fbbf24',
-    description: "Informations de l'assemblée",
-    slide: {
-      backgroundAnimated: 'ocean',
-      title: 'Annonces',
-      content: '',
-      slideType: 'text-title',
-      textColor: '#ffffff',
-      backgroundGradient: 'linear-gradient(135deg,#373b44,#4286f4)',
-      fontSize: 'large',
-      textAlign: 'center',
-      textShadow: false,
-      showLogo: false,
-    },
-  },
-  {
-    id: 'dimes',
-    name: 'Dîmes & Offrandes',
-    Icon: Gift,
-    iconColor: '#fcd34d',
-    description: 'Collecte avec verset',
-    slide: {
-      backgroundAnimated: 'lumiere',
-      title: 'Dîmes & Offrandes',
-      content: '« Apportez à la maison du trésor toutes les dîmes… »\n— Malachie 3:10',
-      slideType: 'text-title',
-      textColor: '#ffd700',
-      backgroundGradient: 'linear-gradient(135deg,#c79231,#3b2a00)',
-      fontSize: 'large',
-      textAlign: 'center',
-      textShadow: true,
-      showLogo: false,
-    },
-  },
-  {
-    id: 'temoignages',
-    name: 'Témoignages',
-    Icon: Mic2,
-    iconColor: '#c4b5fd',
-    description: 'Partage de témoignages',
-    slide: {
-      backgroundAnimated: 'braises',
-      title: 'Témoignages',
-      content: '',
-      slideType: 'title-only',
-      textColor: '#ffffff',
-      backgroundGradient: 'linear-gradient(135deg,#4b0010,#1f003a)',
-      fontSize: 'xlarge',
-      textAlign: 'center',
-      textShadow: true,
-      showLogo: false,
-    },
-  },
-  {
-    id: 'louange',
-    name: 'Louange & Adoration',
-    Icon: Music2,
-    iconColor: '#e0b0ff',
-    description: 'Temps de louange',
-    slide: {
-      backgroundAnimated: 'pourpre',
-      title: 'Louange & Adoration',
-      content: '',
-      slideType: 'title-only',
-      textColor: '#e0b0ff',
-      backgroundGradient: 'linear-gradient(135deg,#2d1b69,#11998e)',
-      fontSize: 'xlarge',
-      textAlign: 'center',
-      textShadow: true,
-      showLogo: false,
-    },
-  },
-  {
-    id: 'chorale',
-    name: 'Prestation de la Chorale',
-    Icon: Users,
-    iconColor: '#6ee7b7',
-    description: 'Concert choral',
-    slide: {
-      backgroundAnimated: 'aube',
-      title: 'Prestation de la Chorale',
-      content: '',
-      slideType: 'title-only',
-      textColor: '#98fb98',
-      backgroundGradient: 'linear-gradient(135deg,#134e5e,#71b280)',
-      fontSize: 'xlarge',
-      textAlign: 'center',
-      textShadow: true,
-      showLogo: false,
-    },
-  },
-  {
-    id: 'predication',
-    name: 'Prédication',
-    Icon: Sparkles,
-    iconColor: '#fde68a',
-    description: 'Thème + verset référence',
-    slide: {
-      backgroundAnimated: 'nuit',
-      title: 'Prédication',
-      content: 'Thème : \nVerset : ',
-      slideType: 'text-title',
-      textColor: '#ffffff',
-      backgroundGradient: 'linear-gradient(135deg,#0f0c29,#302b63,#24243e)',
-      fontSize: 'large',
-      textAlign: 'center',
-      textShadow: true,
-      showLogo: true,
-    },
-  },
-  {
-    id: 'verset',
-    name: 'Verset simple',
-    Icon: BookOpen,
-    iconColor: '#f5f5dc',
-    description: 'Citation biblique',
-    slide: {
-      backgroundAnimated: 'aurore',
-      title: 'Livre chapitre:verset',
-      content: '« Saisissez le texte du verset ici »',
-      slideType: 'verse-title',
-      textColor: '#f5f5dc',
-      backgroundGradient: 'linear-gradient(135deg,#232526,#414345)',
-      fontSize: 'large',
-      textAlign: 'center',
-      textShadow: true,
-      showLogo: false,
-    },
-  },
-  {
-    id: 'liste',
-    name: 'Liste à puces',
-    Icon: List,
-    iconColor: '#93c5fd',
-    description: 'Points clés, programme',
-    slide: {
-      backgroundAnimated: 'ocean',
-      title: 'Programme du culte',
-      content: '',
-      bullets: ['Premier point', 'Deuxième point', 'Troisième point'],
-      slideType: 'bullet-list',
-      textColor: '#ffffff',
-      backgroundGradient: 'linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)',
-      fontSize: 'large',
-      textAlign: 'left',
-      textShadow: false,
-      showLogo: false,
-    },
-  },
-  {
-    id: 'visuel',
-    name: 'Visuel / Image',
-    Icon: ImageIcon,
-    iconColor: '#f9a8d4',
-    description: 'Affiche, invitation, flyer',
-    slide: {
-      title: '',
-      content: '',
-      slideType: 'image-full',
-      textColor: '#ffffff',
-      backgroundGradient: 'linear-gradient(135deg,#232526,#414345)',
-      fontSize: 'large',
-      textAlign: 'center',
-      textShadow: false,
-      showLogo: false,
-    },
-  },
-];
-
-function makeSlide(template: SlideTemplate): CustomSlide {
-  return { id: genId(), ...template.slide };
-}
-
 function createSlide(type: SlideType): CustomSlide {
   return {
     id: genId(),
@@ -280,26 +35,12 @@ function createSlide(type: SlideType): CustomSlide {
     bullets: type === 'bullet-list' ? ['Premier point', 'Deuxième point'] : undefined,
     slideType: type,
     textColor: '#ffffff',
-    backgroundAnimated: type === 'image-full' ? undefined : 'nuit',
+    backgroundAnimated: type === 'image-full' ? undefined : MOMENT_BACKGROUND.parole,
     fontSize: 'large',
     textAlign: type === 'bullet-list' ? 'left' : 'center',
     textShadow: true,
     showLogo: false,
   };
-}
-
-function TemplateThumbnail({ template }: { template: SlideTemplate }) {
-  const s = template.slide as CustomSlide;
-  const bg = getAnimatedBackground(s.backgroundAnimated)?.preview ?? s.backgroundGradient ?? '#1a1a2e';
-  const { Icon, iconColor } = template;
-  return (
-    <div className="h-16 w-full rounded-lg overflow-hidden flex items-center justify-center" style={{ background: bg }}>
-      <div className="text-center px-2">
-        <div className="flex justify-center mb-1"><Icon className="h-5 w-5" style={{ color: iconColor }} /></div>
-        <p className="text-[9px] font-bold opacity-90 leading-tight line-clamp-2" style={{ color: s.textColor ?? '#fff' }}>{template.name}</p>
-      </div>
-    </div>
-  );
 }
 
 const iconBtn = 'h-9 w-9 rounded-lg border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors';
@@ -336,12 +77,15 @@ export default function SlidesEditor({ slides, onChange, onProjectSlide, current
   };
   const addFromTemplate = (template: SlideTemplate) => {
     setShowTemplates(false);
-    const slide = makeSlide(template);
-    if (template.slide.slideType === 'image-full') {
-      pickImage().then(img => { if (img) addAndEdit({ ...slide, backgroundImage: img.dataUrl }); else flashError(); });
+    const made = slidesFromTemplate(template);
+    if (made[0].slideType === 'image-full') {
+      pickImage().then(img => { if (img) addAndEdit({ ...made[0], backgroundImage: img.dataUrl, title: img.name.replace(/\.[^/.]+$/, '') }); else flashError(); });
       return;
     }
-    addAndEdit(slide);
+    // Plusieurs écrans (ex. Notre Père) : tous ajoutés, le premier s'ouvre
+    onChange([...slides, ...made]);
+    setSelectedId(made[0].id);
+    onEditSlide(made[0].id);
   };
   const flashError = () => { setImageError('Aucune image choisie, ou image illisible.'); setTimeout(() => setImageError(''), 3000); };
 
@@ -408,29 +152,7 @@ export default function SlidesEditor({ slides, onChange, onProjectSlide, current
   return (
     <div className="flex flex-col h-full overflow-hidden relative">
       {showTemplates && (
-        <div className="absolute inset-0 z-50 flex flex-col bg-background/98 backdrop-blur-sm rounded-xl">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-border/40">
-            <div className="flex items-center gap-2">
-              <LayoutTemplate className="h-4 w-4 text-primary" />
-              <span className="font-semibold text-sm">Modèles de slides</span>
-            </div>
-            <button onClick={() => setShowTemplates(false)} className="h-10 w-10 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground" aria-label="Fermer">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-2 grid grid-cols-2 gap-2 content-start">
-            {SLIDE_TEMPLATES.map(tpl => (
-              <button key={tpl.id} onClick={() => addFromTemplate(tpl)}
-                className="flex flex-col rounded-xl border border-border/40 bg-secondary/30 hover:bg-secondary/70 hover:border-primary/30 overflow-hidden text-left">
-                <TemplateThumbnail template={tpl} />
-                <div className="px-2 py-1.5">
-                  <p className="text-xs font-semibold text-foreground leading-tight">{tpl.name}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{tpl.description}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+        <TemplateCatalog theme={theme} settings={settings} onPick={addFromTemplate} onClose={() => setShowTemplates(false)} />
       )}
 
       {/* Créer */}
